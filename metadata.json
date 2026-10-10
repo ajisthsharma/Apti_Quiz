@@ -1,0 +1,6 @@
+{
+  "name": "AptiQuiz — Real-Time Multiplayer Aptitude Arena",
+  "description": "Fast-paced live multiplayer aptitude & logic test arena for campus placements with real-time leaderboards, college leagues, and anti-cheat engine.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

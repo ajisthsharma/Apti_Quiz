@@ -1,0 +1,116 @@
+[
+  {
+    "gameId": "game_1791620328580_tfysx6",
+    "roomCode": "5JZKY2",
+    "completedAt": 1791620328580,
+    "questionSetTitle": "Sample questions for quiz A Thon 100 questions Question Bank",
+    "totalRounds": 5,
+    "leaderboard": [
+      {
+        "id": "p_19deqm6e",
+        "participantId": "usr_ajisth_sharma",
+        "name": "AJISTH SHARMA",
+        "college": "NIET",
+        "score": 2379,
+        "rank": 1,
+        "accuracyPercent": 60,
+        "averageTimeSec": 10.79,
+        "correctCount": 3,
+        "topicBreakdown": {
+          "quantitative": {
+            "correct": 3,
+            "total": 5
+          },
+          "logical": {
+            "correct": 0,
+            "total": 0
+          },
+          "verbal": {
+            "correct": 0,
+            "total": 0
+          },
+          "data_interpretation": {
+            "correct": 0,
+            "total": 0
+          }
+        }
+      }
+    ]
+  },
+  {
+    "gameId": "game_1791615580249_aez78o",
+    "roomCode": "P4FA26",
+    "completedAt": 1791615580249,
+    "questionSetTitle": "Campus Placement Grand Arena (Mixed)",
+    "totalRounds": 2,
+    "leaderboard": [
+      {
+        "id": "p_ksfatypp",
+        "participantId": "usr_ajisth_sharma",
+        "name": "AJISTH SHARMA",
+        "college": "NIET",
+        "score": 731,
+        "rank": 1,
+        "accuracyPercent": 50,
+        "averageTimeSec": 6.53,
+        "correctCount": 1,
+        "topicBreakdown": {
+          "quantitative": {
+            "correct": 0,
+            "total": 1
+          },
+          "logical": {
+            "correct": 1,
+            "total": 1
+          },
+          "verbal": {
+            "correct": 0,
+            "total": 0
+          },
+          "data_interpretation": {
+            "correct": 0,
+            "total": 0
+          }
+        }
+      }
+    ]
+  },
+  {
+    "gameId": "game_1791612967782_50p55r",
+    "roomCode": "N4T68P",
+    "completedAt": 1791612967782,
+    "questionSetTitle": "Campus Placement Grand Arena (Mixed)",
+    "totalRounds": 10,
+    "leaderboard": [
+      {
+        "id": "p_jkthcw5q",
+        "participantId": "usr_ajisth_sharma",
+        "name": "AJISTH SHARMA",
+        "college": "IET",
+        "score": 952,
+        "rank": 1,
+        "accuracyPercent": 10,
+        "averageTimeSec": 7.06,
+        "correctCount": 1,
+        "topicBreakdown": {
+          "quantitative": {
+            "correct": 0,
+            "total": 3
+          },
+          "logical": {
+            "correct": 1,
+            "total": 3
+          },
+          "verbal": {
+            "correct": 0,
+            "total": 2
+          },
+          "data_interpretation": {
+            "correct": 0,
+            "total": 2
+          }
+        }
+      }
+    ]
+  }
+]

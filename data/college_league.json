@@ -1,0 +1,20 @@
+[
+  {
+    "college": "NIET",
+    "totalScore": 3110,
+    "matchesPlayed": 2,
+    "totalPlayers": 1,
+    "topScore": 2379,
+    "averageScore": 1555,
+    "attemptsCount": 2
+  },
+  {
+    "college": "IET",
+    "totalScore": 952,
+    "matchesPlayed": 1,
+    "totalPlayers": 1,
+    "topScore": 952,
+    "averageScore": 952,
+    "attemptsCount": 1
+  }
+]
