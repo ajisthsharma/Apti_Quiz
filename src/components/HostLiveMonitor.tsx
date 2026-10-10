@@ -54,7 +54,7 @@ export const HostLiveMonitor: React.FC<HostLiveMonitorProps> = ({
   return (
     <div className="w-full max-w-7xl mx-auto space-y-6 animate-in fade-in duration-300">
       {/* Top Refined Host Control Bar */}
-      <div className="p-4 sm:p-5 rounded-3xl bg-[#111A2E] border border-slate-800 shadow-2xl flex flex-wrap items-center justify-between gap-4">
+      <div className="p-4 sm:p-5 rounded-3xl bg-[#141419] border border-slate-800 shadow-2xl flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="px-3.5 py-1.5 rounded-xl bg-indigo-500/10 text-cyan-300 border border-indigo-500/20 text-xs font-mono font-bold">
             FACULTY CONSOLE • ROOM {roomCode}
@@ -90,7 +90,7 @@ export const HostLiveMonitor: React.FC<HostLiveMonitorProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* LEFT COLUMN (7 cols): Current Question, Options, Timer, Distribution */}
         <div className="lg:col-span-7 space-y-6">
-          <div className="p-6 sm:p-8 rounded-3xl bg-[#111A2E] border border-slate-800 shadow-xl space-y-6">
+          <div className="p-6 sm:p-8 rounded-3xl bg-[#141419] border border-slate-800 shadow-xl space-y-6">
             <div className="flex items-center justify-between">
               <span className="px-3 py-1 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 text-xs font-bold uppercase tracking-wider">
                 {question.topic.replace('_', ' ')} • {question.difficulty}
@@ -183,7 +183,9 @@ export const HostLiveMonitor: React.FC<HostLiveMonitorProps> = ({
                   <Users className="w-4 h-4 text-cyan-400" /> Contestants Answered
                 </span>
                 <span className="font-mono text-cyan-400 font-bold">
-                  {totalAnsweredCount} of {totalContestantsCount} ({answeredPercent}%)
+                  {totalContestantsCount > 0
+                    ? `${totalAnsweredCount} of ${totalContestantsCount} (${answeredPercent}%)`
+                    : `${totalAnsweredCount} answers received`}
                 </span>
               </div>
 
@@ -199,7 +201,7 @@ export const HostLiveMonitor: React.FC<HostLiveMonitorProps> = ({
 
         {/* RIGHT COLUMN (5 cols): Live Participant Rankings, Avatars, Cumulative Scores, Round Points */}
         <div className="lg:col-span-5 space-y-4">
-          <div className="p-6 rounded-3xl bg-[#111A2E] border border-slate-800 shadow-xl space-y-4">
+          <div className="p-6 rounded-3xl bg-[#141419] border border-slate-800 shadow-xl space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Trophy className="w-4 h-4 text-amber-400" />

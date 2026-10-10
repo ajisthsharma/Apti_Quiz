@@ -55,7 +55,7 @@ export const CollegeLeagueView: React.FC<CollegeLeagueViewProps> = ({
   return (
     <div className="w-full max-w-5xl mx-auto space-y-6 animate-in fade-in duration-300">
       {/* League Header */}
-      <div className="p-8 rounded-3xl bg-[#111A2E] border border-slate-800 shadow-2xl relative overflow-hidden">
+      <div className="p-8 rounded-3xl bg-[#141419] border border-slate-800 shadow-2xl relative overflow-hidden">
         <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 rounded-full bg-amber-500/10 blur-3xl pointer-events-none" />
         <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
@@ -144,7 +144,7 @@ export const CollegeLeagueView: React.FC<CollegeLeagueViewProps> = ({
             placeholder={activeTab === 'colleges' ? 'Filter colleges...' : 'Filter candidates...'}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 rounded-xl bg-[#111A2E] border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
+            className="w-full pl-9 pr-4 py-2 rounded-xl bg-[#141419] border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400"
           />
         </div>
         <span className="text-xs text-slate-500 font-mono">
@@ -154,7 +154,7 @@ export const CollegeLeagueView: React.FC<CollegeLeagueViewProps> = ({
 
       {/* College Standings Table */}
       {activeTab === 'colleges' ? (
-        <div className="bg-[#111A2E] border border-slate-800 rounded-3xl shadow-xl overflow-hidden">
+        <div className="bg-[#141419] border border-slate-800 rounded-3xl shadow-xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-xs text-left text-slate-300">
               <thead className="bg-slate-950 text-slate-400 border-b border-slate-800">
@@ -217,7 +217,7 @@ export const CollegeLeagueView: React.FC<CollegeLeagueViewProps> = ({
         </div>
       ) : (
         /* Top Players Hall of Fame */
-        <div className="bg-[#111A2E] border border-slate-800 rounded-3xl shadow-xl overflow-hidden">
+        <div className="bg-[#141419] border border-slate-800 rounded-3xl shadow-xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-xs text-left text-slate-300">
               <thead className="bg-slate-950 text-slate-400 border-b border-slate-800">

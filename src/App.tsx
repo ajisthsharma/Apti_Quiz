@@ -588,7 +588,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-cyan-500 selection:text-black relative">
+    <div className="relative flex min-h-screen flex-col bg-[#09090b] font-sans text-[#f5f5f7] selection:bg-[#c6ff00] selection:text-black">
       {/* Subtle Floating Bubbles Background (reduced during live questions) */}
       <FloatingBubblesBackground isCalmMode={roomStatus === 'QUESTION_ACTIVE'} />
 
@@ -618,7 +618,7 @@ export default function App() {
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col items-center justify-center relative z-10">
+      <main className="relative z-10 mx-auto flex w-full max-w-[1440px] flex-1 flex-col items-center justify-center p-4 sm:p-6 lg:p-8">
         {/* Error Alert Banner */}
         {errorMessage && (
           <div className="w-full max-w-xl mb-6 p-4 rounded-2xl bg-rose-950/80 border border-rose-500/50 text-rose-200 text-xs flex items-center justify-between shadow-xl animate-in slide-in-from-top-2">
@@ -691,7 +691,7 @@ export default function App() {
                   question={currentQuestion}
                   roomCode={roomCode || ''}
                   totalAnsweredCount={totalAnsweredCount}
-                  totalContestantsCount={lobbyPlayers.filter(p => !p.isHost).length || 1}
+                  totalContestantsCount={lobbyPlayers.filter(p => !p.isHost).length}
                   players={lobbyPlayers}
                   roundResult={roundResult}
                   onEndGame={handleHostEndGame}
@@ -706,7 +706,7 @@ export default function App() {
                   selectedOptionId={selectedOptionId}
                   serverElapsedSec={serverElapsedSec}
                   totalAnsweredCount={totalAnsweredCount}
-                  totalPlayersCount={lobbyPlayers.filter(p => !p.isHost).length || 50}
+                  totalPlayersCount={lobbyPlayers.filter(p => !p.isHost).length}
                   powerUp5050Used={powerUp5050Used}
                   eliminatedOptionIds={eliminatedOptionIds}
                   answerEvaluation={answerEvaluation}
@@ -742,31 +742,37 @@ export default function App() {
 
             {/* 3f. DEDICATED STUDENT JOIN PORTAL (When not in an active room) */}
             {(!roomCode || roomStatus === null) && (
-              <div className="w-full max-w-4xl space-y-10">
+              <div className="grid w-full max-w-6xl items-center gap-8 py-3 md:grid-cols-[1.05fr_.95fr] md:gap-12 lg:gap-16">
                 {/* Focused Student Hero */}
-                <div className="text-center space-y-3 max-w-2xl mx-auto pt-2 sm:pt-6">
-                  <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-300 text-xs font-semibold">
-                    <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
-                    Live Placement Arena • Speed & Accuracy Race
+                <div className="space-y-5 text-center md:text-left">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-[#c6ff00]/20 bg-[#c6ff00]/[0.06] px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-[.14em] text-[#d5ff65]">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#c6ff00] shadow-[0_0_10px_rgba(198,255,0,0.7)]" />
+                    Competitive aptitude · Live arena
                   </div>
-                  <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight leading-tight">
-                    Aptitude Practice as a <span className="bg-gradient-to-r from-cyan-400 via-sky-300 to-indigo-400 bg-clip-text text-transparent">Live Multiplayer Race</span>.
+                  <h2 className="text-4xl font-black leading-[1.04] tracking-[-.045em] text-white sm:text-5xl lg:text-6xl">
+                    Think fast.<br />
+                    <span className="text-[#c6ff00]">Play as one.</span>
                   </h2>
-                  <p className="text-sm text-slate-400 max-w-xl mx-auto">
-                    No boring solo PDFs. Scan your campus host's QR code or enter a 6-digit room code to race against campus peers in real time.
+                  <p className="mx-auto max-w-md text-sm leading-6 text-[#a1a1aa] md:mx-0 sm:text-base">
+                    Join your campus match and put speed, accuracy, and nerve to the test. Enter the room code from your host to get in the game.
                   </p>
+                  <div className="flex flex-wrap justify-center gap-x-5 gap-y-2 pt-1 text-[11px] font-semibold text-[#92929f] md:justify-start">
+                    <span className="inline-flex items-center gap-2"><Shield className="h-3.5 w-3.5 text-[#52e5ff]" /> Server-verified rounds</span>
+                    <span className="inline-flex items-center gap-2"><Users className="h-3.5 w-3.5 text-[#c6ff00]" /> Play with your campus</span>
+                  </div>
                 </div>
 
                 {/* Focused Student Join Card */}
-                <div className="max-w-xl mx-auto p-6 sm:p-8 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-2xl relative overflow-hidden backdrop-blur-sm">
-                  <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-800">
-                    <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-cyan-400">
-                      <Play className="w-4 h-4 fill-cyan-400" /> Contestant Join Portal
+                <div className="arena-panel relative mx-auto w-full max-w-xl overflow-hidden rounded-[28px] p-5 backdrop-blur-sm sm:p-7">
+                  <div className="pointer-events-none absolute -right-20 -top-24 h-56 w-56 rounded-full bg-[#c6ff00]/[0.055] blur-3xl" />
+                  <div className="relative mb-5 flex items-center justify-between border-b border-white/[0.08] pb-4">
+                    <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[.12em] text-[#c6ff00]">
+                      <Play className="h-4 w-4 fill-[#c6ff00]" /> Enter the arena
                     </div>
-                    <span className="text-[11px] text-slate-500 font-mono">Real-Time Server Auth</span>
+                    <span className="rounded-md border border-white/[0.08] bg-white/[0.035] px-2 py-1 text-[9px] font-bold uppercase tracking-wider text-[#92929f]">Player entry</span>
                   </div>
 
-                  <form onSubmit={handleJoinRoom} className="space-y-4">
+                  <form onSubmit={handleJoinRoom} className="relative space-y-4">
                     <div>
                       <div className="flex justify-between items-center mb-1.5">
                         <label className="text-xs font-semibold text-slate-300">
@@ -785,7 +791,7 @@ export default function App() {
                         placeholder="e.g. Arjun Sharma"
                         value={playerName}
                         onChange={(e) => setPlayerName(e.target.value)}
-                        className="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-cyan-400 transition-colors"
+                        className="arena-control w-full rounded-xl px-4 py-3 text-sm text-white transition-colors focus:outline-none"
                       />
                     </div>
 
@@ -797,7 +803,7 @@ export default function App() {
                         required
                         value={selectedCollege}
                         onChange={(e) => setSelectedCollege(e.target.value)}
-                        className="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-sm text-white focus:outline-none focus:border-cyan-400 transition-colors"
+                        className="arena-control w-full rounded-xl px-4 py-3 text-sm text-white transition-colors focus:outline-none"
                       >
                         <option value="" disabled>-- Select Your College / University --</option>
                         {PRESET_COLLEGES.map((c) => (
@@ -814,7 +820,7 @@ export default function App() {
                           placeholder="Enter your college or university name"
                           value={customCollege}
                           onChange={(e) => setCustomCollege(e.target.value)}
-                          className="mt-2 w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-cyan-400"
+                          className="arena-control mt-2 w-full rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none"
                         />
                       )}
                     </div>
@@ -841,14 +847,14 @@ export default function App() {
                           setJoinRoomCode(clean);
                           validateRoomCode(clean);
                         }}
-                        className="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-800 text-lg font-mono font-bold tracking-widest text-cyan-400 uppercase placeholder-slate-600 focus:outline-none focus:border-cyan-400 transition-colors text-center sm:text-left"
+                        className="arena-control w-full rounded-xl px-4 py-3 text-center font-mono text-lg font-bold uppercase tracking-[.24em] text-[#52e5ff] transition-colors focus:outline-none sm:text-left"
                       />
                     </div>
 
                     <button
                       type="submit"
                       disabled={isJoiningRoom}
-                      className="w-full py-4 rounded-2xl bg-gradient-to-r from-indigo-500 via-indigo-600 to-cyan-500 hover:from-indigo-600 hover:to-cyan-600 text-white font-bold text-sm tracking-wide transition-all shadow-lg shadow-indigo-500/25 flex items-center justify-center gap-2 cursor-pointer active:scale-98 disabled:opacity-60"
+                      className="arena-button-primary flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl py-4 text-sm font-black tracking-wide disabled:cursor-not-allowed"
                     >
                       {isJoiningRoom ? (
                         <>
@@ -866,11 +872,11 @@ export default function App() {
 
                   <div className="mt-6 pt-5 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
                     <span className="flex items-center gap-1.5">
-                      <Shield className="w-4 h-4 text-emerald-400" /> 100% Anti-Cheat Protected
+                      <Shield className="w-4 h-4 text-[#52e5ff]" /> Server-verified answers
                     </span>
                     <button
                       onClick={() => setIsRulesOpen(true)}
-                      className="text-cyan-400 hover:underline font-medium cursor-pointer"
+                      className="font-medium text-[#52e5ff] hover:underline cursor-pointer"
                     >
                       View Scoring Formula
                     </button>

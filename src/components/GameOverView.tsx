@@ -138,7 +138,7 @@ export const GameOverView: React.FC<GameOverViewProps> = ({
 
       {/* COMPETITION PODIUM: 2nd (Left, Medium) | 1st (Center, Tallest, Gold) | 3rd (Right, Shorter, Bronze) */}
       {podium.length > 0 ? (
-        <div className="p-6 sm:p-10 rounded-3xl bg-[#111A2E]/90 border border-slate-800 shadow-2xl relative overflow-hidden">
+        <div className="p-6 sm:p-10 rounded-3xl bg-[#141419]/90 border border-slate-800 shadow-2xl relative overflow-hidden">
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-48 bg-amber-500/10 blur-3xl pointer-events-none" />
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end max-w-4xl mx-auto pt-6">
@@ -244,7 +244,7 @@ export const GameOverView: React.FC<GameOverViewProps> = ({
           </div>
         </div>
       ) : (
-        <div className="p-12 rounded-3xl bg-[#111A2E] border border-slate-800 text-center text-slate-400">
+        <div className="p-12 rounded-3xl bg-[#141419] border border-slate-800 text-center text-slate-400">
           <Trophy className="w-10 h-10 text-slate-600 mx-auto mb-2" />
           <h3 className="text-base font-bold text-white">No participants completed this match</h3>
         </div>
@@ -252,7 +252,7 @@ export const GameOverView: React.FC<GameOverViewProps> = ({
 
       {/* Current Student's Personal Performance Card */}
       {myRecord && (
-        <div className="p-6 sm:p-8 rounded-3xl bg-[#111A2E] border border-slate-800 shadow-2xl space-y-6">
+        <div className="p-6 sm:p-8 rounded-3xl bg-[#141419] border border-slate-800 shadow-2xl space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
             <div className="flex items-center gap-3.5">
               <ParticipantAvatar id={myRecord.id} name={myRecord.name} size="lg" />
@@ -339,7 +339,7 @@ export const GameOverView: React.FC<GameOverViewProps> = ({
       )}
 
       {/* Full Leaderboard Table with Consistent Avatars, Search, and CSV Export */}
-      <div className="p-6 rounded-3xl bg-[#111A2E] border border-slate-800 shadow-xl space-y-4">
+      <div className="p-6 rounded-3xl bg-[#141419] border border-slate-800 shadow-xl space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h3 className="text-base font-bold text-white">Full Match Standings ({results.leaderboard.length})</h3>
@@ -434,7 +434,7 @@ export const GameOverView: React.FC<GameOverViewProps> = ({
             onViewLeague();
           }}
           disabled={isNavigating}
-          className="px-6 py-3 rounded-2xl bg-[#111A2E] hover:bg-slate-800 text-slate-200 border border-slate-700 font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98 disabled:opacity-50"
+          className="px-6 py-3 rounded-2xl bg-[#141419] hover:bg-slate-800 text-slate-200 border border-slate-700 font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98 disabled:opacity-50"
         >
           <Trophy className="w-4 h-4 text-amber-400" />
           <span>View Leaderboard</span>

@@ -1,10 +1,21 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 
 interface SpaceBackgroundProps {
   isCalmMode?: boolean; // When active quiz is in progress, calm down particle movement
 }
 
 export const FloatingBubblesBackground: React.FC<SpaceBackgroundProps> = ({ isCalmMode = false }) => {
+  const backgroundRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const followPointer = (event: PointerEvent) => {
+      backgroundRef.current?.style.setProperty('--pointer-x', `${event.clientX}px`);
+      backgroundRef.current?.style.setProperty('--pointer-y', `${event.clientY}px`);
+    };
+    window.addEventListener('pointermove', followPointer, { passive: true });
+    return () => window.removeEventListener('pointermove', followPointer);
+  }, []);
+
   // Stars with varied coordinates, sizes, and pulse timing
   const stars = [
     { top: '12%', left: '15%', size: 2, delay: '0s', duration: '4s' },
@@ -29,15 +40,17 @@ export const FloatingBubblesBackground: React.FC<SpaceBackgroundProps> = ({ isCa
 
   return (
     <div
+      ref={backgroundRef}
       aria-hidden="true"
-      className="pointer-events-none fixed inset-0 overflow-hidden -z-10 bg-[#080D1B]"
+      className="arena-ambient pointer-events-none fixed inset-0 z-0 overflow-hidden bg-[#09090b]"
     >
-      {/* Deep Midnight gradient with subtle indigo glow at top */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_75%_60%_at_50%_-10%,rgba(99,102,241,0.18),rgba(8,13,27,0.98))]" />
+      {/* Deep charcoal gradient with a restrained lime glow at top */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_55%_at_50%_-15%,rgba(198,255,0,0.07),rgba(9,9,11,0.98))]" />
+      <div className="absolute inset-0 opacity-[0.12] [background-image:linear-gradient(rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.045)_1px,transparent_1px)] [background-size:64px_64px] [mask-image:linear-gradient(to_bottom,black,transparent_78%)]" />
 
       {/* Soft Nebula Ambient Light */}
-      <div className="absolute top-1/4 -left-20 w-96 h-96 rounded-full bg-cyan-500/5 blur-[120px]" />
-      <div className="absolute bottom-1/4 -right-20 w-96 h-96 rounded-full bg-indigo-600/5 blur-[120px]" />
+      <div className="absolute top-1/4 -left-20 w-96 h-96 rounded-full bg-[#c6ff00]/[0.035] blur-[120px]" />
+      <div className="absolute bottom-1/4 -right-20 w-96 h-96 rounded-full bg-[#c6ff00]/[0.045] blur-[120px]" />
 
       {/* Twinkling Stars */}
       <div className={`w-full h-full relative transition-opacity duration-700 ${isCalmMode ? 'opacity-30' : 'opacity-80'}`}>
@@ -56,7 +69,7 @@ export const FloatingBubblesBackground: React.FC<SpaceBackgroundProps> = ({ isCa
           />
         ))}
 
-        {/* Diagonal Meteors */}
+        {/* Diagonal lime meteor streaks */}
         {!isCalmMode &&
           meteors.map((m, idx) => (
             <div
@@ -103,8 +116,8 @@ export const FloatingBubblesBackground: React.FC<SpaceBackgroundProps> = ({ isCa
         }
         .meteor-streak {
           height: 1.5px;
-          background: linear-gradient(90deg, rgba(34, 211, 238, 0.8), rgba(99, 102, 241, 0.4), transparent);
-          box-shadow: 0 0 6px rgba(34, 211, 238, 0.6);
+          background: linear-gradient(90deg, rgba(198, 255, 0, 0.9), rgba(82, 229, 255, 0.36), transparent);
+          box-shadow: 0 0 7px rgba(198, 255, 0, 0.5);
           border-radius: 9999px;
           animation: meteorPass infinite linear;
         }

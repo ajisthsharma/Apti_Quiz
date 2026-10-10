@@ -31,10 +31,10 @@ export const AptiQuizLogo: React.FC<AptiQuizLogoProps> = ({
     <div className={`inline-flex items-center gap-3 select-none ${className}`}>
       {/* Original Geometric Icon: Neural 'A' + Precision Target + Lightning Chevron */}
       <div
-        className="relative shrink-0 rounded-2xl p-0.5 bg-gradient-to-br from-indigo-500 via-cyan-400 to-sky-500 shadow-lg shadow-cyan-500/20"
+        className="relative shrink-0 rounded-2xl p-0.5 bg-gradient-to-br from-[#c6ff00] via-[#52e5ff] to-[#c6ff00] shadow-lg shadow-[#c6ff00]/10"
         style={{ width: iconDimensions.box, height: iconDimensions.box }}
       >
-        <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center overflow-hidden p-1">
+        <div className="w-full h-full bg-[#09090b] rounded-[14px] flex items-center justify-center overflow-hidden p-1">
           <svg
             viewBox="0 0 48 48"
             fill="none"
@@ -84,9 +84,9 @@ export const AptiQuizLogo: React.FC<AptiQuizLogoProps> = ({
             {/* Gradients */}
             <defs>
               <linearGradient id="aq_cyan_grad" x1="6" y1="6" x2="42" y2="42" gradientUnits="userSpaceOnUse">
-                <stop stopColor="#38BDF8" />
-                <stop offset="0.5" stopColor="#06B6D4" />
-                <stop offset="1" stopColor="#6366F1" />
+              <stop stopColor="#c6ff00" />
+              <stop offset="0.5" stopColor="#52e5ff" />
+              <stop offset="1" stopColor="#c6ff00" />
               </linearGradient>
             </defs>
           </svg>
@@ -98,17 +98,17 @@ export const AptiQuizLogo: React.FC<AptiQuizLogoProps> = ({
         <div className="flex flex-col">
           <div className="flex items-center gap-1.5 leading-none">
             <span className={`font-black tracking-tight text-white ${textClasses}`}>
-              Apti<span className="bg-gradient-to-r from-cyan-400 via-sky-300 to-indigo-300 bg-clip-text text-transparent">Quiz</span>
+              Apti<span className="text-[#c6ff00]">Quiz</span>
             </span>
             {subBadge && (
-              <span className="px-1.5 py-0.5 text-[9px] font-bold tracking-wider uppercase rounded bg-indigo-500/20 text-cyan-300 border border-cyan-500/30">
+              <span className="px-1.5 py-0.5 text-[9px] font-bold tracking-wider uppercase rounded bg-[#c6ff00]/10 text-[#d5ff65] border border-[#c6ff00]/20">
                 {subBadge}
               </span>
             )}
           </div>
           {size !== 'sm' && !subBadge && (
-            <span className="text-[10px] font-semibold tracking-wider uppercase text-slate-400 mt-0.5">
-              Multiplayer Placement Arena
+            <span className="text-[9px] font-semibold tracking-[.16em] uppercase text-[#92929f] mt-1">
+              Multiplayer Aptitude Arena
             </span>
           )}
         </div>

@@ -118,7 +118,7 @@ export const GameArena: React.FC<GameArenaProps> = ({
 
   const topicBadgeColor: Record<string, string> = {
     quantitative: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-    logical: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
+    logical: 'bg-lime-500/10 text-lime-300 border-lime-500/20',
     verbal: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
     data_interpretation: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
   };
@@ -249,7 +249,11 @@ export const GameArena: React.FC<GameArenaProps> = ({
           <div className="flex items-center gap-1.5 font-mono">
             <Users className="w-3.5 h-3.5 text-cyan-400" />
             <span>
-              <strong className="text-white">{totalAnsweredCount}</strong> / {totalPlayersCount || '50'} contestants answered
+              {totalPlayersCount > 0 ? (
+                <><strong className="text-white">{totalAnsweredCount}</strong> / {totalPlayersCount} contestants answered</>
+              ) : (
+                <><strong className="text-white">{totalAnsweredCount}</strong> answers received</>
+              )}
             </span>
           </div>
 
