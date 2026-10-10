@@ -13,6 +13,12 @@ import {
   FileCode,
   FileType,
   Info,
+  Trash2,
+  CheckSquare,
+  Square,
+  Edit2,
+  Check,
+  AlertCircle,
 } from 'lucide-react';
 import {
   parseCSVQuestionBank,
@@ -24,7 +30,7 @@ import {
   SAMPLE_CSV_CONTENT,
   SAMPLE_JSON_CONTENT,
 } from '../utils/questionBankParser.js';
-import { Question } from '../types/quiz.js';
+import { Question, Topic, Difficulty } from '../types/quiz.js';
 
 interface QuestionBankUploadProps {
   onSuccess: () => void;
@@ -40,6 +46,35 @@ export const QuestionBankUpload: React.FC<QuestionBankUploadProps> = ({ onSucces
   const [isSaving, setIsSaving] = useState(false);
   const [statusMessage, setStatusMessage] = useState<{ type: 'error' | 'success' | 'info'; text: string } | null>(null);
   const [expandedRow, setExpandedRow] = useState<number | null>(null);
+  const [selectedInvalidRows, setSelectedInvalidRows] = useState<Set<number>>(new Set());
+  const [showBulkRemoveModal, setShowBulkRemoveModal] = useState(false);
+  const [showSelectedRemoveModal, setShowSelectedRemoveModal] = useState(false);
+
+  // Editable question correction form state
+  const [editingRowNumber, setEditingRowNumber] = useState<number | null>(null);
+  const [editForm, setEditForm] = useState<{
+    questionText: string;
+    optA: string;
+    optB: string;
+    optC: string;
+    optD: string;
+    correctAns: 'A' | 'B' | 'C' | 'D' | '';
+    topic: Topic;
+    difficulty: Difficulty;
+    explanation: string;
+  }>({
+    questionText: '',
+    optA: '',
+    optB: '',
+    optC: '',
+    optD: '',
+    correctAns: 'A',
+    topic: 'quantitative',
+    difficulty: 'medium',
+    explanation: '',
+  });
+  const [editFormError, setEditFormError] = useState<string | null>(null);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -172,6 +207,10 @@ export const QuestionBankUpload: React.FC<QuestionBankUploadProps> = ({ onSucces
       .filter(r => r.isValid && r.question)
       .map(r => r.question!);
 
+    const nextSelected = new Set(selectedInvalidRows);
+    nextSelected.delete(rowNumber);
+    setSelectedInvalidRows(nextSelected);
+
     setParseResult({
       ...parseResult,
       rowDetails: updatedRowDetails,
@@ -186,8 +225,246 @@ export const QuestionBankUpload: React.FC<QuestionBankUploadProps> = ({ onSucces
     });
   };
 
+  // Remove individual invalid question
+  const handleRemoveQuestion = (rowNumber: number) => {
+    if (!parseResult) return;
+
+    const updatedRowDetails = parseResult.rowDetails.filter(r => r.rowNumber !== rowNumber);
+    const validQuestions = updatedRowDetails
+      .filter(r => r.isValid && r.question)
+      .map(r => r.question!);
+
+    const nextSelected = new Set(selectedInvalidRows);
+    nextSelected.delete(rowNumber);
+    setSelectedInvalidRows(nextSelected);
+
+    if (editingRowNumber === rowNumber) {
+      setEditingRowNumber(null);
+    }
+
+    setParseResult({
+      ...parseResult,
+      rowDetails: updatedRowDetails,
+      questions: validQuestions,
+      validRows: validQuestions.length,
+      invalidRows: updatedRowDetails.filter(r => !r.isValid).length,
+      totalRows: updatedRowDetails.length,
+    });
+
+    setStatusMessage({
+      type: 'info',
+      text: `Removed Question #${rowNumber}. ${validQuestions.length} valid question(s) remaining.`,
+    });
+  };
+
+  // Bulk removal of all invalid questions
+  const handleRemoveAllInvalid = () => {
+    if (!parseResult) return;
+    const removedCount = parseResult.invalidRows;
+    if (removedCount === 0) return;
+
+    const updatedRowDetails = parseResult.rowDetails.filter(r => r.isValid);
+    const validQuestions = updatedRowDetails
+      .filter(r => r.question)
+      .map(r => r.question!);
+
+    setSelectedInvalidRows(new Set());
+    setShowBulkRemoveModal(false);
+    setEditingRowNumber(null);
+
+    setParseResult({
+      ...parseResult,
+      rowDetails: updatedRowDetails,
+      questions: validQuestions,
+      validRows: validQuestions.length,
+      invalidRows: 0,
+      totalRows: updatedRowDetails.length,
+    });
+
+    setStatusMessage({
+      type: 'success',
+      text: `Removed all ${removedCount} invalid questions. ${validQuestions.length} valid question(s) ready to save!`,
+    });
+  };
+
+  // Bulk removal of selected invalid questions
+  const handleRemoveSelectedInvalid = () => {
+    if (!parseResult || selectedInvalidRows.size === 0) return;
+    const countToRemove = selectedInvalidRows.size;
+
+    const updatedRowDetails = parseResult.rowDetails.filter(
+      r => !selectedInvalidRows.has(r.rowNumber)
+    );
+    const validQuestions = updatedRowDetails
+      .filter(r => r.isValid && r.question)
+      .map(r => r.question!);
+
+    setSelectedInvalidRows(new Set());
+    setShowSelectedRemoveModal(false);
+
+    setParseResult({
+      ...parseResult,
+      rowDetails: updatedRowDetails,
+      questions: validQuestions,
+      validRows: validQuestions.length,
+      invalidRows: updatedRowDetails.filter(r => !r.isValid).length,
+      totalRows: updatedRowDetails.length,
+    });
+
+    setStatusMessage({
+      type: 'info',
+      text: `Removed ${countToRemove} selected invalid question(s). ${validQuestions.length} valid question(s) remaining.`,
+    });
+  };
+
+  const handleClearSelection = () => {
+    setSelectedInvalidRows(new Set());
+  };
+
+  const handleToggleSelectRow = (rowNumber: number) => {
+    const next = new Set(selectedInvalidRows);
+    if (next.has(rowNumber)) {
+      next.delete(rowNumber);
+    } else {
+      next.add(rowNumber);
+    }
+    setSelectedInvalidRows(next);
+  };
+
+  const handleSelectAllInvalid = () => {
+    if (!parseResult) return;
+    const invalidRowNums = parseResult.rowDetails
+      .filter(r => !r.isValid)
+      .map(r => r.rowNumber);
+
+    if (selectedInvalidRows.size === invalidRowNums.length) {
+      setSelectedInvalidRows(new Set());
+    } else {
+      setSelectedInvalidRows(new Set(invalidRowNums));
+    }
+  };
+
+  // Start inline editing of an invalid question
+  const handleStartEdit = (row: any) => {
+    setEditingRowNumber(row.rowNumber);
+    setEditFormError(null);
+
+    const qText = row.question?.questionText || row.raw?.question || '';
+    const optA = row.question?.options?.[0]?.text || row.raw?.optA || '';
+    const optB = row.question?.options?.[1]?.text || row.raw?.optB || '';
+    const optC = row.question?.options?.[2]?.text || row.raw?.optC || '';
+    const optD = row.question?.options?.[3]?.text || row.raw?.optD || '';
+
+    let ans: 'A' | 'B' | 'C' | 'D' = 'A';
+    if (row.question?.correctOptionId) {
+      const map: Record<string, 'A' | 'B' | 'C' | 'D'> = { opt_1: 'A', opt_2: 'B', opt_3: 'C', opt_4: 'D' };
+      ans = map[row.question.correctOptionId] || 'A';
+    } else if (row.raw?.ans && ['A', 'B', 'C', 'D'].includes(String(row.raw.ans).toUpperCase().trim())) {
+      ans = String(row.raw.ans).toUpperCase().trim() as any;
+    }
+
+    setEditForm({
+      questionText: qText,
+      optA,
+      optB,
+      optC,
+      optD,
+      correctAns: ans,
+      topic: row.question?.topic || (row.raw?.topic as any) || 'quantitative',
+      difficulty: row.question?.difficulty || (row.raw?.difficulty as any) || 'medium',
+      explanation: row.question?.explanation || row.raw?.explanation || '',
+    });
+  };
+
+  // Save inline correction and revalidate
+  const handleSaveEdit = (rowNumber: number) => {
+    if (!parseResult) return;
+
+    if (!editForm.questionText.trim()) {
+      setEditFormError('Question text cannot be empty.');
+      return;
+    }
+    if (!editForm.optA.trim() || !editForm.optB.trim() || !editForm.optC.trim() || !editForm.optD.trim()) {
+      setEditFormError('All four options (A, B, C, and D) must have text.');
+      return;
+    }
+    if (!['A', 'B', 'C', 'D'].includes(editForm.correctAns)) {
+      setEditFormError('Please select a valid correct answer option (A, B, C, or D).');
+      return;
+    }
+
+    const optIdMap: Record<string, string> = { A: 'opt_1', B: 'opt_2', C: 'opt_3', D: 'opt_4' };
+    const correctOptId = optIdMap[editForm.correctAns] || 'opt_1';
+
+    const correctedQ: Question = {
+      id: `q_corrected_${Date.now()}_${rowNumber}`,
+      questionText: editForm.questionText.trim(),
+      options: [
+        { id: 'opt_1', text: editForm.optA.trim() },
+        { id: 'opt_2', text: editForm.optB.trim() },
+        { id: 'opt_3', text: editForm.optC.trim() },
+        { id: 'opt_4', text: editForm.optD.trim() },
+      ],
+      correctOptionId: correctOptId,
+      topic: editForm.topic,
+      difficulty: editForm.difficulty,
+      explanation: editForm.explanation.trim() || `Correct answer is Option ${editForm.correctAns}.`,
+      timeLimitSec: 20,
+    };
+
+    const updatedRowDetails = parseResult.rowDetails.map(r => {
+      if (r.rowNumber !== rowNumber) return r;
+      return {
+        ...r,
+        isValid: true,
+        errors: [],
+        question: correctedQ,
+      };
+    });
+
+    const validQuestions = updatedRowDetails
+      .filter(r => r.isValid && r.question)
+      .map(r => r.question!);
+
+    const nextSelected = new Set(selectedInvalidRows);
+    nextSelected.delete(rowNumber);
+    setSelectedInvalidRows(nextSelected);
+
+    setEditingRowNumber(null);
+    setEditFormError(null);
+
+    setParseResult({
+      ...parseResult,
+      rowDetails: updatedRowDetails,
+      questions: validQuestions,
+      validRows: validQuestions.length,
+      invalidRows: updatedRowDetails.filter(r => !r.isValid).length,
+    });
+
+    setStatusMessage({
+      type: 'success',
+      text: `Question #${rowNumber} corrected and validated successfully! ${validQuestions.length} valid questions ready.`,
+    });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingRowNumber(null);
+    setEditFormError(null);
+  };
+
   const handleSaveToLibrary = async () => {
-    if (!parseResult || parseResult.questions.length === 0) {
+    if (!parseResult) return;
+
+    // Strict revalidation before saving to ensure only 100% valid questions pass
+    const strictlyValidQuestions = parseResult.questions.filter(q => {
+      if (!q || !q.questionText || !q.questionText.trim()) return false;
+      if (!Array.isArray(q.options) || q.options.length !== 4) return false;
+      if (q.options.some(o => !o.text || !o.text.trim())) return false;
+      if (!q.options.some(o => o.id === q.correctOptionId)) return false;
+      return true;
+    });
+
+    if (strictlyValidQuestions.length === 0) {
       setStatusMessage({ type: 'error', text: 'Cannot save: At least one valid question is required.' });
       return;
     }
@@ -197,7 +474,7 @@ export const QuestionBankUpload: React.FC<QuestionBankUploadProps> = ({ onSucces
     setStatusMessage(null);
 
     try {
-      const topicTags = Array.from(new Set(parseResult.questions.map(q => q.topic)));
+      const topicTags = Array.from(new Set(strictlyValidQuestions.map(q => q.topic)));
       const res = await fetch('/api/question-sets', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -205,9 +482,9 @@ export const QuestionBankUpload: React.FC<QuestionBankUploadProps> = ({ onSucces
           title: finalTitle,
           description:
             setDescription.trim() ||
-            `Imported ${parseResult.questions.length} questions from ${file?.name || 'file'}.`,
+            `Imported ${strictlyValidQuestions.length} questions from ${file?.name || 'file'}.`,
           topicTags,
-          questions: parseResult.questions,
+          questions: strictlyValidQuestions,
         }),
       });
 
@@ -396,68 +673,181 @@ export const QuestionBankUpload: React.FC<QuestionBankUploadProps> = ({ onSucces
             </div>
           </div>
 
-          {/* Counts badge bar */}
-          <div className="flex flex-wrap items-center gap-3 text-xs">
-            <span className="px-3 py-1 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 font-bold font-mono">
-              Total Rows Detected: {parseResult.totalRows}
-            </span>
-            <span className="px-3 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold font-mono">
-              ✓ {parseResult.validRows} Valid Questions
-            </span>
-            {parseResult.invalidRows > 0 && (
-              <span className="px-3 py-1 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 font-bold font-mono">
-                ✕ {parseResult.invalidRows} Rows with Errors
+          {/* Counts badge bar & Invalid Questions Action Toolbar */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-slate-950 border border-slate-800 text-xs">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="px-2.5 py-1 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 font-bold font-mono">
+                Total Rows: {parseResult.totalRows}
               </span>
+              <span className="px-2.5 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-bold font-mono">
+                ✓ {parseResult.validRows} Valid
+              </span>
+              {parseResult.invalidRows > 0 ? (
+                <span className="px-2.5 py-1 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 font-bold font-mono">
+                  ✕ {parseResult.invalidRows} Invalid
+                </span>
+              ) : (
+                <span className="px-2.5 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 font-bold font-mono">
+                  ✓ 100% Valid
+                </span>
+              )}
+            </div>
+
+            {/* Quick Actions for Invalid Questions */}
+            {parseResult.invalidRows > 0 && (
+              <div className="flex flex-wrap items-center gap-2">
+                {selectedInvalidRows.size > 0 && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setShowSelectedRemoveModal(true)}
+                      className="px-3 py-1.5 rounded-xl bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all"
+                    >
+                      <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+                      <span>Remove Selected ({selectedInvalidRows.size})</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleClearSelection}
+                      className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold cursor-pointer transition-all"
+                    >
+                      Clear Selection
+                    </button>
+                  </>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => setShowBulkRemoveModal(true)}
+                  className="px-3 py-1.5 rounded-xl bg-rose-950/80 hover:bg-rose-900/80 text-rose-300 hover:text-white border border-rose-500/40 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all shadow-sm"
+                  title="Remove all malformed questions in one click"
+                >
+                  <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+                  <span>Remove All Invalid ({parseResult.invalidRows})</span>
+                </button>
+              </div>
             )}
           </div>
 
           {/* Questions preview table */}
-          <div className="max-h-80 overflow-y-auto rounded-2xl border border-slate-800 bg-slate-950/80">
+          <div className="max-h-96 overflow-y-auto rounded-2xl border border-slate-800 bg-slate-950/80">
             <table className="w-full text-xs text-left text-slate-300">
-              <thead className="bg-slate-900 text-slate-400 sticky top-0 border-b border-slate-800 font-mono">
+              <thead className="bg-slate-900 text-slate-400 sticky top-0 border-b border-slate-800 font-mono z-10">
                 <tr>
+                  <th className="px-3 py-2.5 w-10 text-center">
+                    {parseResult.invalidRows > 0 && (
+                      <button
+                        type="button"
+                        onClick={handleSelectAllInvalid}
+                        className="text-slate-400 hover:text-cyan-400 cursor-pointer"
+                        title={
+                          selectedInvalidRows.size === parseResult.invalidRows
+                            ? 'Deselect all invalid questions'
+                            : 'Select all invalid questions'
+                        }
+                      >
+                        {selectedInvalidRows.size > 0 && selectedInvalidRows.size === parseResult.invalidRows ? (
+                          <CheckSquare className="w-4 h-4 text-cyan-400" />
+                        ) : (
+                          <Square className="w-4 h-4 text-slate-500" />
+                        )}
+                      </button>
+                    )}
+                  </th>
                   <th className="px-3 py-2.5">Row</th>
                   <th className="px-3 py-2.5">Status</th>
                   <th className="px-4 py-2.5">Question Prompt</th>
-                  <th className="px-3 py-2.5">Topic / Diff</th>
+                  <th className="px-3 py-2.5">Available Options</th>
                   <th className="px-3 py-2.5">Correct Answer</th>
-                  <th className="px-3 py-2.5 text-right">Details</th>
+                  <th className="px-3 py-2.5 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60 font-sans">
                 {parseResult.rowDetails.map((row) => {
                   const isExpanded = expandedRow === row.rowNumber;
+                  const isEditing = editingRowNumber === row.rowNumber;
+                  const isSelected = selectedInvalidRows.has(row.rowNumber);
+
                   return (
                     <React.Fragment key={row.rowNumber}>
                       <tr
-                        className={`${
-                          row.isValid ? 'hover:bg-slate-900/40' : 'bg-rose-950/20 hover:bg-rose-950/30'
+                        className={`transition-colors ${
+                          !row.isValid
+                            ? isSelected
+                              ? 'bg-rose-950/40'
+                              : 'bg-rose-950/20 hover:bg-rose-950/30'
+                            : 'hover:bg-slate-900/40'
                         }`}
                       >
+                        {/* Checkbox for invalid rows */}
+                        <td className="px-3 py-2.5 text-center">
+                          {!row.isValid ? (
+                            <button
+                              type="button"
+                              onClick={() => handleToggleSelectRow(row.rowNumber)}
+                              className="cursor-pointer text-slate-400 hover:text-cyan-400"
+                              title="Select invalid question"
+                            >
+                              {isSelected ? (
+                                <CheckSquare className="w-4 h-4 text-cyan-400" />
+                              ) : (
+                                <Square className="w-4 h-4 text-slate-500" />
+                              )}
+                            </button>
+                          ) : (
+                            <span className="text-slate-700 font-mono text-[10px]">—</span>
+                          )}
+                        </td>
+
                         <td className="px-3 py-2.5 font-mono text-slate-500">#{row.rowNumber}</td>
+
+                        {/* Validation Status & Error Reason */}
                         <td className="px-3 py-2.5">
                           {row.isValid ? (
                             <span className="inline-flex items-center gap-1 text-emerald-400 font-bold text-[11px]">
-                              <CheckCircle2 className="w-3 h-3" /> Valid
+                              <CheckCircle2 className="w-3.5 h-3.5 shrink-0" /> Valid
                             </span>
                           ) : (
-                            <span
-                              className="text-rose-400 font-bold text-[11px] block truncate max-w-xs"
-                              title={row.errors.join('; ')}
-                            >
-                              ✕ {row.errors[0]}
-                            </span>
+                            <div className="space-y-0.5 max-w-[200px]">
+                              <span className="inline-flex items-center gap-1 text-rose-400 font-bold text-[11px]">
+                                <AlertTriangle className="w-3.5 h-3.5 shrink-0" /> Invalid
+                              </span>
+                              <span
+                                className="text-rose-300 text-[10px] block truncate font-mono"
+                                title={row.errors.join('; ')}
+                              >
+                                {row.errors[0]}
+                              </span>
+                            </div>
                           )}
                         </td>
+
+                        {/* Question Text */}
                         <td className="px-4 py-2.5 font-medium text-slate-200 truncate max-w-xs">
-                          {row.question?.questionText || row.raw?.question || '(Empty)'}
+                          {row.question?.questionText || row.raw?.question || '(Missing Question Text)'}
                         </td>
-                        <td className="px-3 py-2.5 text-slate-400 uppercase font-mono text-[10px]">
-                          {row.question ? `${row.question.topic} • ${row.question.difficulty}` : 'N/A'}
+
+                        {/* Available Options */}
+                        <td className="px-3 py-2.5 text-slate-300 font-mono text-[11px]">
+                          {row.question ? (
+                            <span className="text-slate-300">4 Options</span>
+                          ) : row.raw?.optA || row.raw?.optB || row.raw?.optC || row.raw?.optD ? (
+                            <span className="text-amber-400">
+                              {[row.raw.optA, row.raw.optB, row.raw.optC, row.raw.optD].filter(Boolean).length}/4 Present
+                            </span>
+                          ) : (
+                            <span className="text-rose-400">0 Options</span>
+                          )}
                         </td>
+
+                        {/* Correct Answer Status */}
                         <td className="px-3 py-2.5 font-mono text-cyan-400 font-bold">
                           {row.isValid && row.question ? (
-                            <span className="truncate max-w-[140px] block" title={row.question.options.find((o) => o.id === row.question?.correctOptionId)?.text}>
+                            <span
+                              className="truncate max-w-[130px] block"
+                              title={row.question.options.find((o) => o.id === row.question?.correctOptionId)?.text}
+                            >
                               {row.question.options.find((o) => o.id === row.question?.correctOptionId)?.text}
                             </span>
                           ) : row.raw?.optA && row.raw?.optB && row.raw?.optC && row.raw?.optD ? (
@@ -470,32 +860,196 @@ export const QuestionBankUpload: React.FC<QuestionBankUploadProps> = ({ onSucces
                                     e.stopPropagation();
                                     handleAssignAnswer(row.rowNumber, letter);
                                   }}
-                                  className="px-2 py-0.5 rounded bg-indigo-950/80 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 font-mono text-[10px] font-bold cursor-pointer transition-colors"
-                                  title={`Select Option ${letter} as correct answer to validate`}
+                                  className="px-1.5 py-0.5 rounded bg-indigo-950/80 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 font-mono text-[10px] font-bold cursor-pointer transition-colors"
+                                  title={`Select Option ${letter} as correct answer`}
                                 >
                                   {letter}
                                 </button>
                               ))}
                             </div>
                           ) : (
-                            <span className="text-rose-400 text-[11px]">{row.raw?.ans || '(Missing)'}</span>
+                            <span className="text-rose-400 text-[11px] font-mono">{row.raw?.ans || '(Missing)'}</span>
                           )}
                         </td>
+
+                        {/* Actions: Remove This Question, Edit/Correct, View */}
                         <td className="px-3 py-2.5 text-right">
-                          <button
-                            type="button"
-                            onClick={() => setExpandedRow(isExpanded ? null : row.rowNumber)}
-                            className="text-[10px] text-cyan-400 hover:text-cyan-300 font-mono underline cursor-pointer"
-                          >
-                            {isExpanded ? 'Hide' : 'View'}
-                          </button>
+                          <div className="flex items-center justify-end gap-1.5">
+                            {!row.isValid && (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => handleStartEdit(row)}
+                                  className="p-1 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 cursor-pointer transition-colors"
+                                  title="Correct this invalid question"
+                                >
+                                  <Edit2 className="w-3.5 h-3.5" />
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveQuestion(row.rowNumber)}
+                                  className="p-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/25 text-rose-400 border border-rose-500/30 cursor-pointer transition-colors"
+                                  title="Remove this invalid question"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </>
+                            )}
+
+                            <button
+                              type="button"
+                              onClick={() => setExpandedRow(isExpanded ? null : row.rowNumber)}
+                              className="text-[10px] text-slate-400 hover:text-cyan-300 font-mono px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 cursor-pointer"
+                            >
+                              {isExpanded ? 'Hide' : 'View'}
+                            </button>
+                          </div>
                         </td>
                       </tr>
 
+                      {/* Inline Question Correction Editor */}
+                      {isEditing && (
+                        <tr className="bg-slate-900/95 border-y-2 border-cyan-500/50">
+                          <td colSpan={7} className="p-4 space-y-3">
+                            <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                              <span className="font-bold text-cyan-300 text-xs flex items-center gap-1.5">
+                                <Edit2 className="w-3.5 h-3.5" />
+                                <span>Correct Question #{row.rowNumber}</span>
+                              </span>
+                              <span className="text-[10px] text-slate-400 font-mono">
+                                Provide missing question text, options, and designated answer.
+                              </span>
+                            </div>
+
+                            {editFormError && (
+                              <div className="p-2.5 rounded-xl bg-rose-950/80 border border-rose-500/50 text-rose-200 text-xs flex items-center gap-2">
+                                <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+                                <span>{editFormError}</span>
+                              </div>
+                            )}
+
+                            <div>
+                              <label className="text-[11px] font-bold text-slate-300 block mb-1">
+                                Question Text *
+                              </label>
+                              <textarea
+                                value={editForm.questionText}
+                                onChange={(e) => setEditForm({ ...editForm, questionText: e.target.value })}
+                                rows={2}
+                                placeholder="Enter full question statement..."
+                                className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:border-cyan-400"
+                              />
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                              {(['A', 'B', 'C', 'D'] as const).map((letter) => {
+                                const key = `opt${letter}` as 'optA' | 'optB' | 'optC' | 'optD';
+                                const isCorrect = editForm.correctAns === letter;
+                                return (
+                                  <div key={letter} className="space-y-1">
+                                    <div className="flex items-center justify-between">
+                                      <label className="text-[11px] font-semibold text-slate-300">
+                                        Option {letter} *
+                                      </label>
+                                      <label className="inline-flex items-center gap-1 text-[10px] text-cyan-300 cursor-pointer">
+                                        <input
+                                          type="radio"
+                                          name={`correct_${row.rowNumber}`}
+                                          checked={isCorrect}
+                                          onChange={() => setEditForm({ ...editForm, correctAns: letter })}
+                                          className="text-cyan-500 focus:ring-0"
+                                        />
+                                        <span className={isCorrect ? 'font-bold text-emerald-400' : 'text-slate-400'}>
+                                          {isCorrect ? '✓ Designated Correct' : 'Mark Correct'}
+                                        </span>
+                                      </label>
+                                    </div>
+                                    <input
+                                      type="text"
+                                      value={editForm[key]}
+                                      onChange={(e) => setEditForm({ ...editForm, [key]: e.target.value })}
+                                      placeholder={`Option ${letter} text...`}
+                                      className={`w-full px-3 py-1.5 rounded-xl bg-slate-950 border text-xs text-white focus:outline-none ${
+                                        isCorrect ? 'border-emerald-500/70 bg-emerald-950/20' : 'border-slate-800'
+                                      }`}
+                                    />
+                                  </div>
+                                );
+                              })}
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                              <div>
+                                <label className="text-[11px] font-semibold text-slate-300 block mb-1">
+                                  Topic
+                                </label>
+                                <select
+                                  value={editForm.topic}
+                                  onChange={(e) => setEditForm({ ...editForm, topic: e.target.value as Topic })}
+                                  className="w-full px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:border-cyan-400"
+                                >
+                                  <option value="quantitative">Quantitative Aptitude</option>
+                                  <option value="logical">Logical Reasoning</option>
+                                  <option value="verbal">Verbal Ability</option>
+                                  <option value="data_interpretation">Data Interpretation</option>
+                                </select>
+                              </div>
+
+                              <div>
+                                <label className="text-[11px] font-semibold text-slate-300 block mb-1">
+                                  Difficulty
+                                </label>
+                                <select
+                                  value={editForm.difficulty}
+                                  onChange={(e) => setEditForm({ ...editForm, difficulty: e.target.value as Difficulty })}
+                                  className="w-full px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:border-cyan-400"
+                                >
+                                  <option value="easy">Easy</option>
+                                  <option value="medium">Medium</option>
+                                  <option value="hard">Hard</option>
+                                </select>
+                              </div>
+
+                              <div>
+                                <label className="text-[11px] font-semibold text-slate-300 block mb-1">
+                                  Explanation (Optional)
+                                </label>
+                                <input
+                                  type="text"
+                                  value={editForm.explanation}
+                                  onChange={(e) => setEditForm({ ...editForm, explanation: e.target.value })}
+                                  placeholder="Solution steps..."
+                                  className="w-full px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white focus:outline-none focus:border-cyan-400"
+                                />
+                              </div>
+                            </div>
+
+                            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
+                              <button
+                                type="button"
+                                onClick={handleCancelEdit}
+                                className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold cursor-pointer"
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleSaveEdit(row.rowNumber)}
+                                className="px-4 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-md"
+                              >
+                                <Check className="w-3.5 h-3.5" />
+                                <span>Save & Validate Question</span>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+
                       {/* Expanded row with full question options or error details */}
-                      {isExpanded && (
+                      {isExpanded && !isEditing && (
                         <tr className="bg-slate-900/60">
-                          <td colSpan={6} className="p-3 text-xs">
+                          <td colSpan={7} className="p-3 text-xs">
                             {row.isValid && row.question ? (
                               <div className="space-y-2">
                                 <div className="font-semibold text-white">{row.question.questionText}</div>
@@ -532,14 +1086,35 @@ export const QuestionBankUpload: React.FC<QuestionBankUploadProps> = ({ onSucces
                               </div>
                             ) : (
                               <div className="space-y-2">
-                                <div className="text-rose-300 text-[11px] font-bold">
-                                  Validation Notice: {row.errors[0]}
+                                <div className="flex items-center justify-between">
+                                  <div className="text-rose-300 text-[11px] font-bold flex items-center gap-1">
+                                    <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
+                                    <span>Validation Errors: {row.errors.join('; ')}</span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => handleStartEdit(row)}
+                                      className="px-2.5 py-1 rounded-lg bg-cyan-500/20 text-cyan-300 text-[11px] font-bold flex items-center gap-1 cursor-pointer"
+                                    >
+                                      <Edit2 className="w-3 h-3" />
+                                      <span>Edit & Fix</span>
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleRemoveQuestion(row.rowNumber)}
+                                      className="px-2.5 py-1 rounded-lg bg-rose-500/20 text-rose-300 text-[11px] font-bold flex items-center gap-1 cursor-pointer"
+                                    >
+                                      <Trash2 className="w-3 h-3" />
+                                      <span>Remove This Question</span>
+                                    </button>
+                                  </div>
                                 </div>
 
                                 {row.raw?.optA && row.raw?.optB && row.raw?.optC && row.raw?.optD && (
                                   <div className="space-y-1.5 pt-1">
                                     <span className="text-[11px] font-semibold text-slate-300">
-                                      Click any option below to designate the correct answer:
+                                      Or quick-assign a correct option below:
                                     </span>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
                                       {[
@@ -567,14 +1142,6 @@ export const QuestionBankUpload: React.FC<QuestionBankUploadProps> = ({ onSucces
                                       ))}
                                     </div>
                                   </div>
-                                )}
-
-                                {row.errors.length > 1 && (
-                                  <ul className="list-disc list-inside space-y-0.5 text-[11px] text-rose-300">
-                                    {row.errors.slice(1).map((err, eIdx) => (
-                                      <li key={eIdx}>{err}</li>
-                                    ))}
-                                  </ul>
                                 )}
                               </div>
                             )}
@@ -614,6 +1181,83 @@ export const QuestionBankUpload: React.FC<QuestionBankUploadProps> = ({ onSucces
               </span>
             </button>
           </div>
+
+          {/* Modal: Confirm Remove All Invalid Questions */}
+          {showBulkRemoveModal && (
+            <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="w-full max-w-md p-6 rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl space-y-4 animate-in zoom-in-95">
+                <div className="w-12 h-12 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center">
+                  <Trash2 className="w-6 h-6" />
+                </div>
+
+                <div>
+                  <h4 className="text-base font-bold text-white">Remove All Invalid Questions?</h4>
+                  <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                    This will remove all <strong className="text-rose-400">{parseResult.invalidRows}</strong> invalid questions from this import preview.
+                    All <strong className="text-emerald-400">{parseResult.validRows}</strong> valid questions will be preserved and ready to save.
+                  </p>
+                  <p className="text-[11px] text-slate-500 mt-2 italic">
+                    Note: The original file on your computer will not be modified or deleted.
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setShowBulkRemoveModal(false)}
+                    className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleRemoveAllInvalid}
+                    className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-lg shadow-rose-900/30"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Confirm & Remove {parseResult.invalidRows} Questions</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Modal: Confirm Remove Selected Invalid Questions */}
+          {showSelectedRemoveModal && (
+            <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="w-full max-w-md p-6 rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl space-y-4 animate-in zoom-in-95">
+                <div className="w-12 h-12 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center">
+                  <Trash2 className="w-6 h-6" />
+                </div>
+
+                <div>
+                  <h4 className="text-base font-bold text-white">Remove Selected Invalid Questions?</h4>
+                  <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                    Remove <strong className="text-rose-400">{selectedInvalidRows.size}</strong> selected invalid questions from this import?
+                    Valid questions will not be touched.
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setShowSelectedRemoveModal(false)}
+                    className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleRemoveSelectedInvalid}
+                    className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-lg shadow-rose-900/30"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Remove {selectedInvalidRows.size} Questions</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

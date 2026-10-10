@@ -103,6 +103,8 @@ export default function App() {
   const [powerUp5050Used, setPowerUp5050Used] = useState(false);
   const [eliminatedOptionIds, setEliminatedOptionIds] = useState<string[]>([]);
   const [startingCountdown, setStartingCountdown] = useState<number | null>(null);
+  const [liveOptionCounts, setLiveOptionCounts] = useState<Record<string, number>>({});
+  const [hostMonitorContestants, setHostMonitorContestants] = useState<any[]>([]);
 
   // WebSocket Ref
   const wsRef = useRef<WebSocket | null>(null);
@@ -266,6 +268,13 @@ export default function App() {
           if (msg.currentQuestion) {
             setCurrentQuestion(msg.currentQuestion);
           }
+          if (msg.status === 'GAME_OVER' || msg.finalResults) {
+            setRoomStatus('GAME_OVER');
+            if (msg.finalResults) {
+              setFinalResults(msg.finalResults);
+              sessionStorage.setItem('apti_last_results', JSON.stringify(msg.finalResults));
+            }
+          }
         } else if (msg.type === 'LOBBY_UPDATE') {
           setLobbyPlayers(msg.players || []);
           if (msg.questionSetTitle) setQuestionSetTitle(msg.questionSetTitle);
@@ -284,6 +293,7 @@ export default function App() {
           setRoomStatus('QUESTION_ACTIVE');
           setCurrentQuestion(msg.payload);
           setRoundResult(null);
+          setLiveOptionCounts({});
           setHasAnswered(false);
           setSelectedOptionId(undefined);
           setServerElapsedSec(undefined);
@@ -304,6 +314,12 @@ export default function App() {
           setTotalAnsweredCount(msg.totalAnswered);
         } else if (msg.type === 'HOST_MONITOR_UPDATE') {
           setTotalAnsweredCount(msg.totalAnswered);
+          if (msg.optionCounts) {
+            setLiveOptionCounts(msg.optionCounts);
+          }
+          if (msg.contestants) {
+            setHostMonitorContestants(msg.contestants);
+          }
         } else if (msg.type === 'POWERUP_5050_RESULT') {
           setPowerUp5050Used(true);
           setEliminatedOptionIds(msg.eliminatedOptionIds || []);
@@ -315,7 +331,7 @@ export default function App() {
           setRoomStatus('GAME_OVER');
           setFinalResults(msg.payload);
           setAnswerEvaluation(null);
-          sessionStorage.removeItem('apti_room_code');
+          sessionStorage.setItem('apti_last_results', JSON.stringify(msg.payload));
         }
       } catch (err) {
         console.error('Socket message parse error:', err);

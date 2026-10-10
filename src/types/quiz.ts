@@ -106,6 +106,25 @@ export interface RoundResultPayload {
   }[];
 }
 
+export interface ParticipantQuestionReview {
+  roundIndex: number;
+  questionId: string;
+  questionText: string;
+  topic: Topic;
+  difficulty: Difficulty;
+  selectedOptionId?: string;
+  selectedOptionText?: string;
+  correctOptionId: string;
+  correctOptionText: string;
+  isCorrect: boolean;
+  hasAnswered: boolean;
+  explanation: string;
+  tableData?: {
+    headers: string[];
+    rows: string[][];
+  };
+}
+
 export interface FinalResultsPayload {
   gameId?: string;
   roomCode: string;
@@ -124,6 +143,7 @@ export interface FinalResultsPayload {
     correctCount: number;
     topicBreakdown: Record<Topic, { correct: number; total: number }>;
   }[];
+  questionReviews?: Record<string, ParticipantQuestionReview[]>;
 }
 
 export interface CollegeLeaderboardEntry {
