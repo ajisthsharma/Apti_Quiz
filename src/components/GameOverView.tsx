@@ -15,10 +15,22 @@ import {
   LayoutDashboard,
   ArrowRight,
   Sparkles,
+  FileText,
+  AlertCircle,
+  FileCheck,
+  ChevronDown,
+  ChevronUp,
+  XCircle,
 } from 'lucide-react';
 import { FinalResultsPayload, Topic } from '../types/quiz.js';
 import { sound } from '../utils/sound.js';
 import { ParticipantAvatar } from './ParticipantAvatar.js';
+import { MatchPodium } from './MatchPodium.js';
+import {
+  downloadLearningReportPDF,
+  downloadLearningReportDOCX,
+  LearningReportData,
+} from '../utils/learningReportGenerator.js';
 
 interface GameOverViewProps {
   results: FinalResultsPayload;
@@ -41,6 +53,8 @@ export const GameOverView: React.FC<GameOverViewProps> = ({
 }) => {
   const [searchFilter, setSearchFilter] = useState('');
   const [isNavigating, setIsNavigating] = useState(false);
+  const [downloadFormat, setDownloadFormat] = useState<'pdf' | 'docx' | null>(null);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
 
   useEffect(() => {
     sound.playFanfare();
@@ -70,13 +84,69 @@ export const GameOverView: React.FC<GameOverViewProps> = ({
     }
   }, []);
 
-  const myRecord = results.leaderboard.find(p => p.id === currentPlayerId);
-  const podium = results.leaderboard.slice(0, 3);
+  const myRecord = results.leaderboard.find(p => p.id === currentPlayerId || (p as any).participantId === currentPlayerId);
+  const myReviews = (results.questionReviews?.[currentPlayerId] ||
+    (myRecord && results.questionReviews?.[(myRecord as any).participantId]) ||
+    []) as any[];
+
+  const mistakes = myReviews.filter(q => !q.isCorrect);
+  const hasAnsweredAny = myReviews.some(q => q.hasAnswered);
 
   const filteredLeaderboard = results.leaderboard.filter(p =>
     p.name.toLowerCase().includes(searchFilter.toLowerCase()) ||
     (p.college && p.college.toLowerCase().includes(searchFilter.toLowerCase()))
   );
+
+  const handleDownloadReport = async (format: 'pdf' | 'docx') => {
+    if (!myRecord) return;
+    setDownloadFormat(format);
+    setDownloadError(null);
+
+    try {
+      let reviews = myReviews;
+      if (reviews.length === 0) {
+        try {
+          const res = await fetch(`/api/matches/${results.roomCode}/reviews/${currentPlayerId}`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data.reviews && data.reviews.length > 0) {
+              reviews = data.reviews;
+            }
+          }
+        } catch {
+          // fallback to client results
+        }
+      }
+
+      const reportData: LearningReportData = {
+        roomCode: results.roomCode,
+        completedAt: results.completedAt,
+        questionSetTitle: results.questionSetTitle,
+        participantName: myRecord.name,
+        college: myRecord.college,
+        finalScore: myRecord.score,
+        finalRank: myRecord.rank,
+        totalParticipants: results.leaderboard.length,
+        totalQuestions: results.totalRounds,
+        correctCount: myRecord.correctCount,
+        incorrectCount: Math.max(0, results.totalRounds - myRecord.correctCount),
+        accuracyPercent: myRecord.accuracyPercent,
+        averageTimeSec: myRecord.averageTimeSec,
+        questionReviews: reviews,
+      };
+
+      if (format === 'pdf') {
+        await downloadLearningReportPDF(reportData);
+      } else {
+        await downloadLearningReportDOCX(reportData);
+      }
+    } catch (err: any) {
+      console.error('Failed to generate learning report:', err);
+      setDownloadError(err?.message || 'Failed to generate mistake review report. Please try again.');
+    } finally {
+      setDownloadFormat(null);
+    }
+  };
 
   const exportCSV = () => {
     const headers = [
@@ -126,7 +196,8 @@ export const GameOverView: React.FC<GameOverViewProps> = ({
       {/* Header Banner */}
       <div className="text-center space-y-2 pt-2">
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold tracking-wider uppercase">
-          <Trophy className="w-4 h-4 text-amber-400" /> Match Completed • Official Rankings
+          <Trophy className="w-4 h-4 text-amber-400" />
+          <span>{isHost ? 'Faculty Host Console • Official Match Results' : 'Match Completed • Official Rankings'}</span>
         </div>
         <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight">
           Campus Placement Arena Podium
@@ -136,117 +207,52 @@ export const GameOverView: React.FC<GameOverViewProps> = ({
         </p>
       </div>
 
-      {/* COMPETITION PODIUM: 2nd (Left, Medium) | 1st (Center, Tallest, Gold) | 3rd (Right, Shorter, Bronze) */}
-      {podium.length > 0 ? (
-        <div className="p-6 sm:p-10 rounded-3xl bg-[#111A2E]/90 border border-slate-800 shadow-2xl relative overflow-hidden">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-48 bg-amber-500/10 blur-3xl pointer-events-none" />
+      {/* REUSABLE AUTHORITATIVE MATCH PODIUM COMPONENT (Desktop & Mobile) */}
+      <MatchPodium
+        leaderboard={results.leaderboard}
+        currentPlayerId={currentPlayerId}
+        isHost={isHost}
+      />
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end max-w-4xl mx-auto pt-6">
-            {/* 2nd Place: Left, Medium height */}
-            {podium[1] ? (
-              <div className="order-2 md:order-1 flex flex-col items-center text-center space-y-3">
-                <div className="relative">
-                  <ParticipantAvatar
-                    id={podium[1].id}
-                    name={podium[1].name}
-                    size="lg"
-                    className="ring-4 ring-slate-300/60 shadow-lg shadow-slate-300/20"
-                  />
-                  <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-slate-300 text-slate-950 font-black text-[10px] uppercase shadow-sm">
-                    🥈 2nd
-                  </span>
-                </div>
-
-                <div className="space-y-0.5 w-full">
-                  <h4 className="font-extrabold text-slate-100 text-base truncate">{podium[1].name}</h4>
-                  <p className="text-xs text-slate-400 truncate">{podium[1].college || 'Independent'}</p>
-                </div>
-
-                {/* Medium Height Podium Base */}
-                <div className="w-full pt-6 pb-5 px-4 rounded-3xl bg-gradient-to-b from-slate-800 to-slate-950 border border-slate-700/80 shadow-xl space-y-1 min-h-[140px] flex flex-col justify-center items-center">
-                  <span className="font-mono text-xs uppercase text-slate-400 font-bold">Runner Up</span>
-                  <div className="font-mono text-2xl font-black text-cyan-400">{podium[1].score.toLocaleString()} pts</div>
-                  <div className="text-[11px] text-slate-400 font-mono">
-                    {podium[1].accuracyPercent}% Acc • {podium[1].averageTimeSec}s avg
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="order-2 md:order-1 hidden md:block" />
-            )}
-
-            {/* 1st Place: Center, Tallest, Gold Accent */}
-            {podium[0] ? (
-              <div className="order-1 md:order-2 flex flex-col items-center text-center space-y-3.5 -mt-6">
-                <div className="relative">
-                  <div className="absolute -top-6 left-1/2 -translate-x-1/2 flex items-center gap-1 px-3 py-1 rounded-full bg-amber-500 text-slate-950 font-black text-[11px] uppercase tracking-wider shadow-lg shadow-amber-500/30 animate-bounce">
-                    <Sparkles className="w-3.5 h-3.5" /> CHAMPION
-                  </div>
-                  <ParticipantAvatar
-                    id={podium[0].id}
-                    name={podium[0].name}
-                    size="xl"
-                    className="ring-4 ring-amber-400 shadow-2xl shadow-amber-500/30"
-                  />
-                  <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-amber-400 text-slate-950 font-black text-xs uppercase shadow-md">
-                    🥇 1st Place
-                  </span>
-                </div>
-
-                <div className="space-y-0.5 w-full">
-                  <h3 className="font-black text-white text-lg sm:text-xl truncate">{podium[0].name}</h3>
-                  <p className="text-xs text-amber-300 font-semibold truncate">{podium[0].college || 'Independent'}</p>
-                </div>
-
-                {/* Tallest Podium Base */}
-                <div className="w-full pt-8 pb-6 px-4 rounded-3xl bg-gradient-to-b from-amber-950/60 via-slate-900 to-slate-950 border-2 border-amber-500/60 shadow-2xl shadow-amber-500/20 space-y-1.5 min-h-[180px] flex flex-col justify-center items-center">
-                  <span className="font-mono text-xs uppercase tracking-wider text-amber-300 font-extrabold">Match Winner</span>
-                  <div className="font-mono text-3xl font-black text-amber-400">{podium[0].score.toLocaleString()} pts</div>
-                  <div className="text-xs text-slate-300 font-mono font-medium">
-                    {podium[0].accuracyPercent}% Accuracy • {podium[0].averageTimeSec}s avg
-                  </div>
-                </div>
-              </div>
-            ) : null}
-
-            {/* 3rd Place: Right, Shorter, Bronze Accent */}
-            {podium[2] ? (
-              <div className="order-3 md:order-3 flex flex-col items-center text-center space-y-3">
-                <div className="relative">
-                  <ParticipantAvatar
-                    id={podium[2].id}
-                    name={podium[2].name}
-                    size="lg"
-                    className="ring-4 ring-amber-700/60 shadow-lg shadow-amber-700/20"
-                  />
-                  <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-amber-700 text-white font-black text-[10px] uppercase shadow-sm">
-                    🥉 3rd
-                  </span>
-                </div>
-
-                <div className="space-y-0.5 w-full">
-                  <h4 className="font-extrabold text-slate-100 text-base truncate">{podium[2].name}</h4>
-                  <p className="text-xs text-slate-400 truncate">{podium[2].college || 'Independent'}</p>
-                </div>
-
-                {/* Shorter Height Podium Base */}
-                <div className="w-full pt-5 pb-4 px-4 rounded-3xl bg-gradient-to-b from-slate-900 to-slate-950 border border-amber-900/40 shadow-xl space-y-1 min-h-[115px] flex flex-col justify-center items-center">
-                  <span className="font-mono text-xs uppercase text-slate-400 font-bold">3rd Place</span>
-                  <div className="font-mono text-xl font-black text-cyan-400">{podium[2].score.toLocaleString()} pts</div>
-                  <div className="text-[11px] text-slate-400 font-mono">
-                    {podium[2].accuracyPercent}% Acc • {podium[2].averageTimeSec}s avg
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="order-3 md:order-3 hidden md:block" />
-            )}
+      {/* Faculty Host Match Analytics Card (Only shown to Host) */}
+      {isHost && (
+        <div className="p-6 sm:p-8 rounded-3xl bg-[#111A2E] border border-slate-800 shadow-2xl space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+            <div>
+              <span className="text-xs font-mono font-bold uppercase tracking-wider text-cyan-400">
+                Host Analytics & Faculty Summary
+              </span>
+              <h3 className="text-lg font-black text-white">Quiz Match Overview</h3>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={exportCSV}
+                className="px-3.5 py-2 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5" />
+                <span>Export Full CSV</span>
+              </button>
+            </div>
           </div>
-        </div>
-      ) : (
-        <div className="p-12 rounded-3xl bg-[#111A2E] border border-slate-800 text-center text-slate-400">
-          <Trophy className="w-10 h-10 text-slate-600 mx-auto mb-2" />
-          <h3 className="text-base font-bold text-white">No participants completed this match</h3>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 font-mono text-center">
+            <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800">
+              <span className="text-[10px] text-slate-400 uppercase font-bold block">Contestants</span>
+              <span className="text-xl font-black text-white">{results.leaderboard.length}</span>
+            </div>
+            <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800">
+              <span className="text-[10px] text-slate-400 uppercase font-bold block">Rounds Completed</span>
+              <span className="text-xl font-black text-cyan-400">{results.totalRounds}</span>
+            </div>
+            <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800">
+              <span className="text-[10px] text-slate-400 uppercase font-bold block">Top Score</span>
+              <span className="text-xl font-black text-amber-400">{results.leaderboard[0]?.score?.toLocaleString() || 0}</span>
+            </div>
+            <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800">
+              <span className="text-[10px] text-slate-400 uppercase font-bold block">Winning College</span>
+              <span className="text-xs font-bold text-slate-200 truncate block mt-1">{results.leaderboard[0]?.college || 'Independent'}</span>
+            </div>
+          </div>
         </div>
       )}
 
@@ -338,6 +344,163 @@ export const GameOverView: React.FC<GameOverViewProps> = ({
         </div>
       )}
 
+      {/* Review Your Mistakes Section for Participants */}
+      {myRecord && (
+        <div className="p-6 sm:p-8 rounded-3xl bg-[#111A2E] border border-slate-800 shadow-2xl space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+            <div>
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-bold mb-2">
+                <FileCheck className="w-3.5 h-3.5" /> POST-MATCH STUDY REPORT
+              </div>
+              <h3 className="text-xl font-black text-white">Review Your Mistakes</h3>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Download personalized wrong-answer reports or review full explanations to boost your placement score.
+              </p>
+            </div>
+
+            {/* Two Download Options: PDF and Word Document (.docx) */}
+            <div className="flex flex-wrap items-center gap-2.5">
+              <button
+                onClick={() => handleDownloadReport('pdf')}
+                disabled={downloadFormat !== null}
+                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 text-white font-bold text-xs shadow-md shadow-rose-900/30 flex items-center gap-2 cursor-pointer transition-all active:scale-98 disabled:opacity-50"
+                title="Download personalized mistake review in PDF format"
+              >
+                <FileText className="w-4 h-4" />
+                <span>{downloadFormat === 'pdf' ? 'Generating PDF...' : 'Download PDF'}</span>
+              </button>
+
+              <button
+                onClick={() => handleDownloadReport('docx')}
+                disabled={downloadFormat !== null}
+                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs shadow-md shadow-blue-900/30 flex items-center gap-2 cursor-pointer transition-all active:scale-98 disabled:opacity-50"
+                title="Download personalized mistake review in Word (.docx) format"
+              >
+                <FileText className="w-4 h-4" />
+                <span>{downloadFormat === 'docx' ? 'Generating Word...' : 'Download Word Document (.docx)'}</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Download Error Banner if any */}
+          {downloadError && (
+            <div className="p-3.5 rounded-2xl bg-rose-950/80 border border-rose-500/50 text-rose-200 text-xs flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+                <span>{downloadError}</span>
+              </div>
+              <button
+                onClick={() => handleDownloadReport('pdf')}
+                className="text-xs font-bold text-cyan-300 underline cursor-pointer"
+              >
+                Retry
+              </button>
+            </div>
+          )}
+
+          {/* Mistakes Content Breakdown */}
+          {!hasAnsweredAny && myReviews.length === 0 ? (
+            <div className="p-6 rounded-2xl bg-slate-950/60 border border-slate-800 text-center text-slate-400 space-y-1">
+              <AlertCircle className="w-8 h-8 text-slate-500 mx-auto mb-1" />
+              <h4 className="font-bold text-sm text-slate-200">No Answers Submitted</h4>
+              <p className="text-xs text-slate-500">There are no submitted answers available for review from this session.</p>
+            </div>
+          ) : mistakes.length === 0 ? (
+            <div className="p-6 rounded-2xl bg-emerald-950/40 border border-emerald-500/40 text-emerald-300 flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center shrink-0">
+                <Sparkles className="w-6 h-6 text-emerald-400" />
+              </div>
+              <div>
+                <h4 className="font-bold text-sm text-white">Flawless Performance! Zero Mistakes Recorded</h4>
+                <p className="text-xs text-emerald-300/80 mt-0.5">
+                  You scored 100% accuracy on all questions in this match. Download your official certificate of perfection above.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between text-xs text-slate-400">
+                <span>Identified {mistakes.length} Question{mistakes.length === 1 ? '' : 's'} to Learn From</span>
+                <span className="font-mono text-[11px] text-rose-400 font-bold">Needs Review</span>
+              </div>
+
+              <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
+                {mistakes.map((q: any, mIdx: number) => (
+                  <div
+                    key={q.questionId || mIdx}
+                    className="p-4 sm:p-5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3"
+                  >
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <span className="px-2.5 py-0.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 font-mono text-[11px] font-bold">
+                        Question #{q.roundIndex} • {topicLabels[q.topic as Topic] || q.topic} [{String(q.difficulty).toUpperCase()}]
+                      </span>
+                      <span className="text-[10px] text-rose-400 font-mono font-bold flex items-center gap-1">
+                        <XCircle className="w-3.5 h-3.5" /> Incorrect
+                      </span>
+                    </div>
+
+                    <h4 className="text-sm font-bold text-white leading-relaxed">
+                      {q.questionText}
+                    </h4>
+
+                    {/* Table Data if question had a table */}
+                    {q.tableData && (
+                      <div className="overflow-x-auto rounded-xl border border-slate-800 bg-slate-900/60 p-1">
+                        <table className="w-full text-[11px] text-slate-300">
+                          <thead className="bg-slate-900 text-cyan-400 border-b border-slate-800 font-mono">
+                            <tr>
+                              {q.tableData.headers.map((h: string, i: number) => (
+                                <th key={i} className="px-3 py-1.5 font-semibold text-left">{h}</th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-800 font-mono">
+                            {q.tableData.rows.map((row: string[], rIdx: number) => (
+                              <tr key={rIdx}>
+                                {row.map((cell: string, cIdx: number) => (
+                                  <td key={cIdx} className="px-3 py-1 text-slate-300">{cell}</td>
+                                ))}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                      <div className="p-3 rounded-xl bg-rose-950/30 border border-rose-900/40 text-rose-200">
+                        <span className="text-[10px] text-rose-400 font-bold uppercase tracking-wider block mb-0.5">
+                          Your Selected Answer:
+                        </span>
+                        <span className="font-semibold">{q.selectedOptionText || '(Unanswered / Timed Out)'}</span>
+                      </div>
+
+                      <div className="p-3 rounded-xl bg-emerald-950/30 border border-emerald-900/40 text-emerald-200">
+                        <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider block mb-0.5">
+                          Authoritative Correct Answer:
+                        </span>
+                        <span className="font-semibold">{q.correctOptionText}</span>
+                      </div>
+                    </div>
+
+                    {q.explanation && (
+                      <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 text-xs text-slate-300 space-y-1">
+                        <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-wider block font-mono">
+                          Conceptual Explanation:
+                        </span>
+                        <p className="text-slate-300 leading-relaxed font-sans text-[11px]">
+                          {q.explanation}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Full Leaderboard Table with Consistent Avatars, Search, and CSV Export */}
       <div className="p-6 rounded-3xl bg-[#111A2E] border border-slate-800 shadow-xl space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -418,13 +581,17 @@ export const GameOverView: React.FC<GameOverViewProps> = ({
           onClick={() => {
             if (isNavigating) return;
             setIsNavigating(true);
-            onPlayAgain();
+            if (isHost && onHostPortal) {
+              onHostPortal();
+            } else {
+              onPlayAgain();
+            }
           }}
           disabled={isNavigating}
           className="px-6 py-3 rounded-2xl bg-gradient-to-r from-indigo-500 via-indigo-600 to-cyan-500 hover:from-indigo-600 hover:to-cyan-600 text-white font-bold text-xs tracking-wide transition-all shadow-lg shadow-indigo-500/25 flex items-center justify-center gap-2 cursor-pointer active:scale-98 disabled:opacity-50"
         >
           <RefreshCw className="w-4 h-4" />
-          <span>Play Another Match</span>
+          <span>{isHost ? 'Launch Another Quiz Room' : 'Play Another Match'}</span>
         </button>
 
         <button

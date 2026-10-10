@@ -17,6 +17,7 @@ import {
   FinalResultsPayload,
   CollegeLeaderboardEntry,
   PlayerLeaderboardEntry,
+  ParticipantQuestionReview,
   Topic,
 } from './src/types/quiz.js';
 import { calculateRoundScore } from './src/utils/scoring.js';
@@ -283,7 +284,9 @@ interface ServerRoom {
   playerTokens: Map<string, string>; // playerId -> sessionToken
   clientSockets: Map<string, WebSocket>; // playerId -> ws
   currentRoundSubmissions: Map<string, RoomAnswerSubmission>;
+  roundHistory: Map<number, Map<string, RoomAnswerSubmission>>;
   playerOptionMaps: Map<string, QuestionOption[]>; // playerId -> shuffled options
+  finalResults?: FinalResultsPayload;
 }
 
 const activeRooms = new Map<string, ServerRoom>();
@@ -358,6 +361,26 @@ function broadcastLobbyState(room: ServerRoom) {
 function sendHostRoomMonitor(room: ServerRoom) {
   const nonHostPlayers = Array.from(room.players.values()).filter(p => !p.isHost);
   const submissions = room.currentRoundSubmissions;
+  const currentQ = room.activeQuestions[room.currentRoundIndex];
+
+  // Live option distribution counts
+  const optionCounts: Record<string, number> = {};
+  if (currentQ && currentQ.options) {
+    for (const opt of currentQ.options) {
+      optionCounts[opt.id] = 0;
+    }
+    for (const sub of submissions.values()) {
+      if (sub.optionId) {
+        optionCounts[sub.optionId] = (optionCounts[sub.optionId] || 0) + 1;
+      }
+    }
+  }
+
+  // Authoritative sort: score desc, then totalCorrect desc
+  const sortedContestants = [...nonHostPlayers].sort((a, b) => {
+    if (b.score !== a.score) return b.score - a.score;
+    return (b.stats.totalCorrect || 0) - (a.stats.totalCorrect || 0);
+  });
 
   sendToPlayer(room, room.hostId, {
     type: 'HOST_MONITOR_UPDATE',
@@ -367,14 +390,21 @@ function sendHostRoomMonitor(room: ServerRoom) {
     totalRounds: room.activeQuestions.length,
     totalAnswered: submissions.size,
     totalContestants: nonHostPlayers.length,
-    contestants: nonHostPlayers.map(p => ({
+    optionCounts,
+    contestants: sortedContestants.map((p, idx) => ({
       id: p.id,
       name: p.name,
       college: p.college,
+      rank: idx + 1,
       connected: p.connected,
       hasAnswered: submissions.has(p.id),
       score: p.score,
+      currentRoundScore: p.currentRoundScore,
       roundScore: p.currentRoundScore,
+      stats: p.stats,
+      correctCount: p.stats.totalCorrect,
+      totalAnswered: p.stats.totalAnswered,
+      accuracyPercent: p.stats.totalAnswered > 0 ? Math.round((p.stats.totalCorrect / p.stats.totalAnswered) * 100) : 0,
     })),
   });
 }
@@ -394,6 +424,9 @@ function startRoundForRoom(room: ServerRoom, roundIndex: number) {
   room.status = 'QUESTION_ACTIVE';
   room.currentRoundSubmissions.clear();
   room.playerOptionMaps.clear();
+  if (!room.roundHistory.has(roundIndex)) {
+    room.roundHistory.set(roundIndex, new Map());
+  }
 
   const currentQ = room.activeQuestions[roundIndex];
   const timeLimitSec = room.settings.roundDurationSec || currentQ.timeLimitSec || 20;
@@ -581,6 +614,44 @@ function endGameForRoom(room: ServerRoom) {
     ? room.currentRoundIndex + 1
     : room.activeQuestions.length;
 
+  // Build authoritative question reviews for each contestant
+  const questionReviews: Record<string, ParticipantQuestionReview[]> = {};
+  const maxRounds = Math.min(actualRoundsPlayed, room.activeQuestions.length);
+
+  for (const p of contestPlayers) {
+    const pReviews: ParticipantQuestionReview[] = [];
+
+    for (let rIdx = 0; rIdx < maxRounds; rIdx++) {
+      const q = room.activeQuestions[rIdx];
+      const sub = room.roundHistory?.get(rIdx)?.get(p.id) ||
+        (rIdx === room.currentRoundIndex ? room.currentRoundSubmissions.get(p.id) : undefined);
+
+      const correctOpt = q.options.find(o => o.id === q.correctOptionId);
+      const selectedOpt = sub?.optionId ? q.options.find(o => o.id === sub.optionId) : undefined;
+
+      pReviews.push({
+        roundIndex: rIdx + 1,
+        questionId: q.id,
+        questionText: q.questionText,
+        topic: q.topic,
+        difficulty: q.difficulty,
+        selectedOptionId: sub?.optionId,
+        selectedOptionText: selectedOpt ? selectedOpt.text : undefined,
+        correctOptionId: q.correctOptionId,
+        correctOptionText: correctOpt ? correctOpt.text : 'Option ' + q.correctOptionId,
+        isCorrect: sub ? sub.isCorrect : false,
+        hasAnswered: !!sub,
+        explanation: q.explanation || 'Review the core quantitative and logical reasoning steps for this concept.',
+        tableData: q.tableData,
+      });
+    }
+
+    questionReviews[p.id] = pReviews;
+    if (p.participantId) {
+      questionReviews[p.participantId] = pReviews;
+    }
+  }
+
   const finalResults: FinalResultsPayload = {
     gameId: `game_${Date.now()}_${generateToken().substring(0, 6)}`,
     roomCode: room.code,
@@ -588,9 +659,11 @@ function endGameForRoom(room: ServerRoom) {
     questionSetTitle: room.questionSet.title,
     totalRounds: Math.max(1, actualRoundsPlayed),
     leaderboard,
+    questionReviews,
   };
 
   // Persist completed game into database / JSON storage and re-aggregate college league
+  room.finalResults = finalResults;
   recordCompletedGame(finalResults);
 
   broadcastToRoom(room, {
@@ -733,6 +806,7 @@ app.post('/api/rooms', (req, res) => {
       playerTokens: new Map(),
       clientSockets: new Map(),
       currentRoundSubmissions: new Map(),
+      roundHistory: new Map(),
       playerOptionMaps: new Map(),
     };
 
@@ -870,6 +944,34 @@ app.get('/api/matches/:id', (req, res) => {
   res.json(match);
 });
 
+// Participant Learning Report API — Returns authoritative mistake reviews for the verified participant
+app.get('/api/matches/:id/reviews/:playerId', (req, res) => {
+  const match = completedGames.find(m => m.roomCode === req.params.id || m.gameId === req.params.id);
+  if (!match) {
+    res.status(404).json({ error: 'Match record not found' });
+    return;
+  }
+  const pid = req.params.playerId;
+  const participant = match.leaderboard.find(p => p.id === pid || (p as any).participantId === pid);
+  if (!participant) {
+    res.status(404).json({ error: 'Participant not found in match' });
+    return;
+  }
+
+  const reviews = match.questionReviews?.[participant.id] ||
+    match.questionReviews?.[(participant as any).participantId] ||
+    [];
+
+  res.json({
+    roomCode: match.roomCode,
+    gameId: match.gameId,
+    completedAt: match.completedAt,
+    questionSetTitle: match.questionSetTitle,
+    participant,
+    reviews,
+  });
+});
+
 // -------------------------------------------------------------
 // WEBSOCKET SERVER & PROTOCOL HANDLER
 // -------------------------------------------------------------
@@ -933,6 +1035,7 @@ wss.on('connection', (ws: WebSocket) => {
             playerTokens: new Map(),
             clientSockets: new Map(),
             currentRoundSubmissions: new Map(),
+            roundHistory: new Map(),
             playerOptionMaps: new Map(),
           };
 
@@ -1235,6 +1338,12 @@ wss.on('connection', (ws: WebSocket) => {
           recoveryPayload.timeRemainingSec = timeRemainingSec;
         }
 
+        if (room.status === 'GAME_OVER' || room.hasEnded) {
+          recoveryPayload.status = 'GAME_OVER';
+          (recoveryPayload as any).finalResults =
+            room.finalResults || completedGames.find(g => g.roomCode === normalizedCode);
+        }
+
         ws.send(JSON.stringify(recoveryPayload));
         broadcastLobbyState(room);
         sendHostRoomMonitor(room);
@@ -1369,14 +1478,19 @@ wss.on('connection', (ws: WebSocket) => {
         player.stats.topicStats[currentQ.topic] = topicStat;
 
         // Store submission
-        room.currentRoundSubmissions.set(playerId, {
+        const subRecord: RoomAnswerSubmission = {
           playerId,
           optionId,
           serverReceivedMs: serverNowMs,
           elapsedMs,
           isCorrect,
           scoreAwarded: scoreDetails.totalPoints,
-        });
+        };
+        room.currentRoundSubmissions.set(playerId, subRecord);
+        if (!room.roundHistory.has(room.currentRoundIndex)) {
+          room.roundHistory.set(room.currentRoundIndex, new Map());
+        }
+        room.roundHistory.get(room.currentRoundIndex)!.set(playerId, subRecord);
 
         // Acknowledge receipt to player with authoritative live answer evaluation feedback
         ws.send(JSON.stringify({
