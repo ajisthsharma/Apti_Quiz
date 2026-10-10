@@ -1,5 +1,5 @@
 import React from 'react';
-import { Trophy, Shield, Volume2, VolumeX, Sparkles, LayoutDashboard } from 'lucide-react';
+import { Trophy, Shield, Volume2, VolumeX, LayoutDashboard, Swords, Radio } from 'lucide-react';
 import { AptiQuizLogo } from './AptiQuizLogo.js';
 
 interface NavbarProps {
@@ -12,6 +12,12 @@ interface NavbarProps {
   isHostActive?: boolean;
 }
 
+const tabs = [
+  { id: 'student', label: 'Play', icon: Swords },
+  { id: 'league', label: 'League', icon: Trophy },
+  { id: 'host', label: 'Faculty', icon: LayoutDashboard },
+] as const;
+
 export const Navbar: React.FC<NavbarProps> = ({
   currentTab,
   setCurrentTab,
@@ -22,107 +28,83 @@ export const Navbar: React.FC<NavbarProps> = ({
   isHostActive,
 }) => {
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-slate-800 bg-slate-950/85 backdrop-blur-md">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-        {/* Brand with Original Logo */}
-        <div
-          className="cursor-pointer"
+    <header className="sticky top-0 z-40 w-full border-b border-white/[0.08] bg-[#09090b]/90 backdrop-blur-xl">
+      <div className="mx-auto flex h-[68px] max-w-[1440px] items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
+        <button
+          type="button"
+          className="rounded-xl text-left focus-visible:outline-offset-4"
           onClick={() => setCurrentTab('student')}
+          aria-label="AptiQuiz home"
         >
-          <AptiQuizLogo size="md" subBadge={isHostActive ? 'HOST CONSOLE' : undefined} />
-        </div>
+          <AptiQuizLogo size="sm" subBadge={isHostActive ? 'LIVE HOST' : undefined} />
+        </button>
 
-        {/* Center Navigation Tabs */}
-        <nav className="hidden md:flex items-center space-x-1.5 bg-slate-900/80 p-1 rounded-2xl border border-slate-800">
-          <button
-            onClick={() => setCurrentTab('student')}
-            className={`px-4 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center space-x-1.5 cursor-pointer ${
-              currentTab === 'student'
-                ? 'bg-gradient-to-r from-indigo-600 to-cyan-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
-            }`}
-          >
-            <span>Student Join</span>
-          </button>
-
-          <button
-            onClick={() => setCurrentTab('league')}
-            className={`px-4 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center space-x-1.5 cursor-pointer ${
-              currentTab === 'league'
-                ? 'bg-gradient-to-r from-indigo-600 to-cyan-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
-            }`}
-          >
-            <Trophy className="w-3.5 h-3.5 text-amber-400" />
-            <span>Campus League</span>
-          </button>
-
-          <button
-            onClick={() => setCurrentTab('host')}
-            className={`px-4 py-1.5 rounded-xl text-xs font-semibold transition-all flex items-center space-x-1.5 cursor-pointer ${
-              currentTab === 'host'
-                ? 'bg-gradient-to-r from-indigo-600 to-cyan-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
-            }`}
-          >
-            <LayoutDashboard className="w-3.5 h-3.5 text-cyan-400" />
-            <span>Faculty Portal</span>
-          </button>
+        <nav aria-label="Main navigation" className="hidden md:flex items-center gap-1 rounded-2xl border border-white/[0.08] bg-white/[0.035] p-1">
+          {tabs.map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setCurrentTab(id)}
+              aria-pressed={currentTab === id}
+              className={`relative flex cursor-pointer items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold tracking-wide transition-colors focus-visible:outline-offset-2 ${
+                currentTab === id
+                  ? 'bg-[#c6ff00] text-[#09090b] shadow-[0_0_24px_rgba(198,255,0,0.12)]'
+                  : 'text-[#92929f] hover:bg-white/[0.06] hover:text-white'
+              }`}
+            >
+              <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+              <span>{label}</span>
+            </button>
+          ))}
         </nav>
 
-        {/* Right Actions */}
-        <div className="flex items-center space-x-2.5">
+        <div className="flex shrink-0 items-center gap-2">
           {roomCode && (
-            <div className="flex items-center space-x-1.5 px-3 py-1 rounded-xl bg-slate-900 border border-cyan-500/30 text-cyan-300 text-xs font-mono font-bold">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-              <span>ROOM: {roomCode}</span>
+            <div className="flex items-center gap-2 rounded-xl border border-[#c6ff00]/25 bg-[#c6ff00]/[0.07] px-2.5 py-2 text-[10px] font-bold tracking-wider text-[#d5ff65] sm:px-3 sm:text-[11px]">
+              <Radio className="h-3.5 w-3.5 animate-pulse" aria-hidden="true" />
+              <span className="hidden sm:inline">ROOM</span>
+              <span className="font-mono">{roomCode}</span>
             </div>
           )}
-
           <button
+            type="button"
             onClick={onOpenRules}
             title="Scoring Rules & Anti-Cheat Protection"
-            className="p-2 sm:px-3 sm:py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:bg-slate-800 transition-colors flex items-center space-x-1.5 text-xs font-semibold cursor-pointer"
+            aria-label="Open scoring rules and anti-cheat information"
+            className="arena-control flex h-9 items-center justify-center gap-2 rounded-xl px-2.5 text-[#b9b9c3] hover:border-white/20 hover:bg-white/[0.07] hover:text-white sm:px-3"
           >
-            <Shield className="w-4 h-4 text-cyan-400" />
-            <span className="hidden sm:inline">Rules & Delay</span>
+            <Shield className="h-4 w-4 text-[#52e5ff]" aria-hidden="true" />
+            <span className="hidden lg:inline text-[11px] font-semibold">Rules</span>
           </button>
-
           <button
+            type="button"
             onClick={onToggleMute}
-            title={isMuted ? 'Unmute Sound' : 'Mute Sound'}
-            className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+            title={isMuted ? 'Unmute sound' : 'Mute sound'}
+            aria-label={isMuted ? 'Unmute sound' : 'Mute sound'}
+            aria-pressed={!isMuted}
+            className="arena-control flex h-9 w-9 items-center justify-center rounded-xl text-[#b9b9c3] hover:border-white/20 hover:bg-white/[0.07] hover:text-white"
           >
-            {isMuted ? (
-              <VolumeX className="w-4 h-4 text-rose-400" />
-            ) : (
-              <Volume2 className="w-4 h-4 text-emerald-400" />
-            )}
+            {isMuted ? <VolumeX className="h-4 w-4 text-[#92929f]" aria-hidden="true" /> : <Volume2 className="h-4 w-4 text-[#c6ff00]" aria-hidden="true" />}
           </button>
         </div>
       </div>
 
-      {/* Mobile Submenu Bar */}
-      <div className="flex md:hidden border-t border-slate-800/60 bg-slate-950 px-2 py-1.5 justify-around text-xs">
-        <button
-          onClick={() => setCurrentTab('student')}
-          className={`py-1 px-3 font-semibold rounded-lg ${currentTab === 'student' ? 'text-cyan-400 bg-slate-900' : 'text-slate-400'}`}
-        >
-          Join Quiz
-        </button>
-        <button
-          onClick={() => setCurrentTab('league')}
-          className={`py-1 px-3 font-semibold rounded-lg ${currentTab === 'league' ? 'text-cyan-400 bg-slate-900' : 'text-slate-400'}`}
-        >
-          League
-        </button>
-        <button
-          onClick={() => setCurrentTab('host')}
-          className={`py-1 px-3 font-semibold rounded-lg ${currentTab === 'host' ? 'text-cyan-400 bg-slate-900' : 'text-slate-400'}`}
-        >
-          Faculty Portal
-        </button>
-      </div>
+      <nav aria-label="Main navigation" className="grid grid-cols-3 border-t border-white/[0.06] bg-[#0e0e12] px-2 py-1.5 md:hidden">
+        {tabs.map(({ id, label, icon: Icon }) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setCurrentTab(id)}
+            aria-pressed={currentTab === id}
+            className={`flex min-h-10 cursor-pointer items-center justify-center gap-2 rounded-lg px-2 text-xs font-bold transition-colors focus-visible:outline-offset-1 ${
+              currentTab === id ? 'bg-white/[0.06] text-[#c6ff00]' : 'text-[#92929f] hover:text-white'
+            }`}
+          >
+            <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+            {label}
+          </button>
+        ))}
+      </nav>
     </header>
   );
 };

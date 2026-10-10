@@ -21,7 +21,7 @@ export const RoomQrCode: React.FC<RoomQrCodeProps> = ({ roomCode }) => {
       width: 400,
       margin: 2,
       color: {
-        dark: '#020617', // high contrast dark navy/black
+        dark: '#09090b', // high contrast dark navy/black
         light: '#FFFFFF', // crisp white
       },
       errorCorrectionLevel: 'H',

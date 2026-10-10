@@ -70,7 +70,7 @@ export const HostDashboard: React.FC<HostDashboardProps> = ({
   return (
     <div className="w-full max-w-5xl mx-auto space-y-6 animate-in fade-in duration-300">
       {/* Host Portal Header */}
-      <div className="p-8 rounded-3xl bg-[#111A2E] border border-slate-800 shadow-2xl relative overflow-hidden">
+      <div className="p-8 rounded-3xl bg-[#141419] border border-slate-800 shadow-2xl relative overflow-hidden">
         <div className="absolute top-0 right-0 -mr-20 -mt-20 w-80 h-80 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none" />
         <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
@@ -86,7 +86,7 @@ export const HostDashboard: React.FC<HostDashboardProps> = ({
           </div>
 
           {/* EXACTLY TWO Primary Navigation Options: Launch Room & Question Studio */}
-          <div className="flex items-center gap-2 bg-[#080D1B] p-1.5 rounded-2xl border border-slate-800 self-start sm:self-auto">
+          <div className="flex items-center gap-2 bg-[#09090B] p-1.5 rounded-2xl border border-slate-800 self-start sm:self-auto">
             <button
               onClick={() => setActiveHostTab('create')}
               className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
@@ -124,7 +124,7 @@ export const HostDashboard: React.FC<HostDashboardProps> = ({
       {activeHostTab === 'create' && (
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
           {/* Room Configuration Form (7 cols) */}
-          <div className="md:col-span-7 p-6 sm:p-8 rounded-3xl bg-[#111A2E] border border-slate-800 shadow-xl space-y-6">
+          <div className="md:col-span-7 p-6 sm:p-8 rounded-3xl bg-[#141419] border border-slate-800 shadow-xl space-y-6">
             <div>
               <h3 className="text-lg font-bold text-white mb-1">Create a New Live Match</h3>
               <p className="text-xs text-slate-400">
@@ -304,7 +304,7 @@ export const HostDashboard: React.FC<HostDashboardProps> = ({
           </div>
 
           {/* Quick Guide Card (5 cols) */}
-          <div className="md:col-span-5 p-6 rounded-3xl bg-[#111A2E] border border-slate-800 shadow-xl space-y-4">
+          <div className="md:col-span-5 p-6 rounded-3xl bg-[#141419] border border-slate-800 shadow-xl space-y-4">
             <h4 className="text-xs font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-1.5">
               <Sparkles className="w-4 h-4 text-amber-400" /> How Live Hosting Works
             </h4>

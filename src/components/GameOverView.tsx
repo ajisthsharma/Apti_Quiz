@@ -258,7 +258,7 @@ export const GameOverView: React.FC<GameOverViewProps> = ({
 
       {/* Current Student's Personal Performance Card */}
       {myRecord && (
-        <div className="p-6 sm:p-8 rounded-3xl bg-[#111A2E] border border-slate-800 shadow-2xl space-y-6">
+        <div className="p-6 sm:p-8 rounded-3xl bg-[#141419] border border-slate-800 shadow-2xl space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
             <div className="flex items-center gap-3.5">
               <ParticipantAvatar id={myRecord.id} name={myRecord.name} size="lg" />
@@ -502,7 +502,7 @@ export const GameOverView: React.FC<GameOverViewProps> = ({
       )}
 
       {/* Full Leaderboard Table with Consistent Avatars, Search, and CSV Export */}
-      <div className="p-6 rounded-3xl bg-[#111A2E] border border-slate-800 shadow-xl space-y-4">
+      <div className="p-6 rounded-3xl bg-[#141419] border border-slate-800 shadow-xl space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h3 className="text-base font-bold text-white">Full Match Standings ({results.leaderboard.length})</h3>
@@ -601,7 +601,7 @@ export const GameOverView: React.FC<GameOverViewProps> = ({
             onViewLeague();
           }}
           disabled={isNavigating}
-          className="px-6 py-3 rounded-2xl bg-[#111A2E] hover:bg-slate-800 text-slate-200 border border-slate-700 font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98 disabled:opacity-50"
+          className="px-6 py-3 rounded-2xl bg-[#141419] hover:bg-slate-800 text-slate-200 border border-slate-700 font-bold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98 disabled:opacity-50"
         >
           <Trophy className="w-4 h-4 text-amber-400" />
           <span>View Leaderboard</span>

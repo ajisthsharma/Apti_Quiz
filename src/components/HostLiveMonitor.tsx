@@ -323,7 +323,9 @@ export const HostLiveMonitor: React.FC<HostLiveMonitorProps> = ({
                   <Users className="w-4 h-4 text-cyan-400" /> Contestants Answered
                 </span>
                 <span className="font-mono text-cyan-400 font-bold">
-                  {totalAnsweredCount} of {totalContestantsCount} ({answeredPercent}%)
+                  {totalContestantsCount > 0
+                    ? `${totalAnsweredCount} of ${totalContestantsCount} (${answeredPercent}%)`
+                    : `${totalAnsweredCount} answers received`}
                 </span>
               </div>
 

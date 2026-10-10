@@ -1,1 +1,165 @@
 @import "tailwindcss";
+
+@theme {
+  --color-slate-50: #f4f4f5;
+  --color-slate-100: #e4e4e7;
+  --color-slate-200: #d4d4d8;
+  --color-slate-300: #a1a1aa;
+  --color-slate-400: #a1a1aa;
+  --color-slate-500: #71717a;
+  --color-slate-600: #52525b;
+  --color-slate-700: #3f3f46;
+  --color-slate-800: #27272a;
+  --color-slate-900: #18181b;
+  --color-slate-950: #09090b;
+
+  --color-indigo-50: #f7fee7;
+  --color-indigo-100: #ecfccb;
+  --color-indigo-200: #d9f99d;
+  --color-indigo-300: #bef264;
+  --color-indigo-400: #a3e635;
+  --color-indigo-500: #628d0a;
+  --color-indigo-600: #4c7005;
+  --color-indigo-700: #395604;
+  --color-indigo-800: #293f03;
+  --color-indigo-900: #1c2d02;
+  --color-indigo-950: #111b01;
+
+  --color-sky-50: #ecfeff;
+  --color-sky-100: #cffafe;
+  --color-sky-200: #a5f3fc;
+  --color-sky-300: #67e8f9;
+  --color-sky-400: #52e5ff;
+  --color-sky-500: #22d3ee;
+  --color-sky-600: #0891b2;
+  --color-sky-700: #0e7490;
+  --color-sky-800: #155e75;
+  --color-sky-900: #164e63;
+  --color-sky-950: #083344;
+
+  --color-cyan-50: #f7fee7;
+  --color-cyan-100: #ecfccb;
+  --color-cyan-200: #d9f99d;
+  --color-cyan-300: #d5ff65;
+  --color-cyan-400: #c6ff00;
+  --color-cyan-500: #b0e600;
+  --color-cyan-600: #8eb800;
+  --color-cyan-700: #6b8a00;
+  --color-cyan-800: #475d00;
+  --color-cyan-900: #263300;
+  --color-cyan-950: #141a00;
+
+  --color-blue-50: #ecfeff;
+  --color-blue-100: #cffafe;
+  --color-blue-200: #a5f3fc;
+  --color-blue-300: #67e8f9;
+  --color-blue-400: #52e5ff;
+  --color-blue-500: #22d3ee;
+  --color-blue-600: #0891b2;
+  --color-blue-700: #0e7490;
+  --color-blue-800: #155e75;
+  --color-blue-900: #164e63;
+  --color-blue-950: #083344;
+
+  --color-arena-bg: #09090b;
+  --color-arena-surface: #141419;
+  --color-arena-raised: #1c1c24;
+  --color-arena-lime: #c6ff00;
+  --color-arena-cyan: #52e5ff;
+  --color-arena-text: #f5f5f7;
+  --color-arena-muted: #92929f;
+  --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+:root {
+  color-scheme: dark;
+  font-family: var(--font-sans);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: #09090b;
+  color: #f5f5f7;
+  font-optical-sizing: auto;
+}
+
+* { box-sizing: border-box; }
+
+html { min-width: 320px; background: #09090b; }
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+  background: #09090b;
+  color: #f5f5f7;
+}
+
+::selection { color: #09090b; background: #c6ff00; }
+
+:focus-visible {
+  outline: 2px solid #c6ff00;
+  outline-offset: 3px;
+}
+
+button, input, select, textarea { font: inherit; }
+button { -webkit-tap-highlight-color: transparent; }
+
+input, select, textarea {
+  color-scheme: dark;
+}
+
+input::placeholder, textarea::placeholder { color: #71717d; }
+
+.arena-panel {
+  border: 1px solid rgba(255, 255, 255, .09);
+  background: linear-gradient(145deg, rgba(28, 28, 36, .94), rgba(20, 20, 25, .96));
+  box-shadow: 0 24px 70px rgba(0, 0, 0, .28);
+}
+
+.arena-ambient::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(480px circle at var(--pointer-x, 50%) var(--pointer-y, 35%), rgba(198, 255, 0, .085), transparent 70%),
+    radial-gradient(760px circle at calc(var(--pointer-x, 50%) + 220px) calc(var(--pointer-y, 35%) + 140px), rgba(198, 255, 0, .035), transparent 72%);
+  transition: opacity 220ms ease;
+}
+
+.arena-control {
+  border: 1px solid rgba(255, 255, 255, .12);
+  background: rgba(9, 9, 11, .72);
+  transition: border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
+}
+
+.arena-control:focus {
+  border-color: rgba(198, 255, 0, .72);
+  box-shadow: 0 0 0 3px rgba(198, 255, 0, .12);
+}
+
+.arena-button-primary {
+  color: #09090b;
+  background: #c6ff00;
+  box-shadow: 0 8px 28px rgba(198, 255, 0, .13);
+  transition: transform 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
+}
+
+.arena-button-primary:hover:not(:disabled) {
+  background: #d3ff45;
+  box-shadow: 0 10px 34px rgba(198, 255, 0, .2);
+  transform: translateY(-1px);
+}
+
+.arena-button-primary:active:not(:disabled) { transform: translateY(0) scale(.99); }
+.arena-button-primary:disabled { cursor: not-allowed; opacity: .58; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}

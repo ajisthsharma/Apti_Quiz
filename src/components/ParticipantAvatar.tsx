@@ -9,12 +9,12 @@ interface AvatarProps {
 
 const AVATAR_PALETTES = [
   { bg: 'from-cyan-500 to-blue-600', text: 'text-cyan-100', icon: '⚡' },
-  { bg: 'from-indigo-500 to-purple-600', text: 'text-indigo-100', icon: '🌌' },
+  { bg: 'from-lime-500 to-green-700', text: 'text-lime-100', icon: '🌌' },
   { bg: 'from-emerald-500 to-teal-600', text: 'text-emerald-100', icon: '🌲' },
   { bg: 'from-amber-500 to-orange-600', text: 'text-amber-100', icon: '🔥' },
   { bg: 'from-rose-500 to-pink-600', text: 'text-rose-100', icon: '⭐' },
-  { bg: 'from-violet-500 to-fuchsia-600', text: 'text-violet-100', icon: '🔮' },
-  { bg: 'from-sky-400 to-indigo-600', text: 'text-sky-100', icon: '🚀' },
+  { bg: 'from-emerald-400 to-green-700', text: 'text-emerald-50', icon: '🔮' },
+  { bg: 'from-sky-400 to-green-700', text: 'text-sky-100', icon: '🚀' },
   { bg: 'from-teal-400 to-emerald-600', text: 'text-teal-100', icon: '🛡️' },
 ];
 
